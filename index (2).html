@@ -99,12 +99,58 @@
 
             0%,
             100% {
+                opacity: 1;
                 transform: scale(1);
             }
 
             50% {
+                opacity: 0.5;
                 transform: scale(1.05);
             }
+        }
+
+        .vdot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1a5f7a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-vdot-fetch {
+            background: #f0f9ff;
+            color: #1a5f7a;
+            border: 1px solid #bae6fd;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-vdot-fetch:hover {
+            background: #e0f2fe;
+            border-color: #1a5f7a;
+        }
+
+        .vdot-legend {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         @keyframes shimmer {
@@ -1035,6 +1081,13 @@
                                 style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>VDOT
                             Speeds</span>
                     </label>
+                    <label
+                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" id="vdotBikePedToggle"
+                            style="width: 16px; height: 16px; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 6px;"><span
+                                style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%;"></span>Bike/Ped</span>
+                    </label>
                     <a href="map.html" target="_blank"
                         style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.95); color: #1a5f7a; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
@@ -1177,7 +1230,19 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="roadwayName">Roadway Name *</label>
+                            <label for="roadwayName"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                Roadway Name *
+                                <button type="button" onclick="fetchVDOTDataManual()" class="btn-vdot-fetch"
+                                    title="Fetch data from VDOT ArcGIS">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <path d="M9 12l2 2 4-4" />
+                                    </svg>
+                                    Fetch VDOT
+                                </button>
+                            </label>
                             <input type="text" id="roadwayName" placeholder="Enter roadway name">
                         </div>
                         <div class="form-group">
@@ -1224,6 +1289,15 @@
                             <label for="jurisdiction">Jurisdiction</label>
                             <input type="text" id="jurisdiction" placeholder="County/City name">
                         </div>
+                    </div>
+
+                    <div class="vdot-legend">
+                        <span class="vdot-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="3">
+                                <path d="M20 6L9 17l-5-5" />
+                            </svg> VDOT</span>
+                        <span style="font-size: 0.75rem; color: #64748b;">Auto-populated from Virginia Dept of
+                            Transportation database</span>
                     </div>
                 </div>
 
@@ -2730,7 +2804,8 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
             SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
             TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0',
             CRASHES: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer/0',
-            SIDEWALKS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Sidewalk_Inventory/FeatureServer/0'
+            SIDEWALKS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Sidewalk_Inventory/FeatureServer/0',
+            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0'
         };
 
         let vaBoundaryLayer;
@@ -2864,7 +2939,26 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                     url: VDOT_SERVICES.SPEED_LIMITS,
                     style: function () { return { color: '#10b981', weight: 3 }; }
                 });
+
+                window.vdotBikePedLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.BIKE_PED,
+                    pointToLayer: function (geojson, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            fillColor: '#8b5cf6',
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    }
+                });
             }
+        }
+
+        function fetchVDOTDataManual() {
+            const center = embeddedMap.getCenter();
+            fetchVDOTData(center);
         }
 
         async function fetchVDOTData(latlng) {
@@ -2876,21 +2970,54 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 const speedResult = await queryEsriService(VDOT_SERVICES.SPEED_LIMITS, latlng);
                 if (speedResult) {
                     updateField('roadwayName', speedResult.ROUTE_COMMON_NAME, 'VDOT');
-                    updateField('currentSpeedLimit', speedResult.SPEED_LIMIT, 'VDOT');
+                    updateField('currentSpeedLimit', speedResult.CAR_SPEED_LIMIT, 'VDOT');
+                    updateField('jurisdiction', speedResult.FROM_JURISDICTION, 'VDOT');
+                    updateField('corridorLength', speedResult.LENGTH ? speedResult.LENGTH.toFixed(2) : null, 'VDOT');
+
+                    // Map Classification
+                    if (speedResult.RTE_TYPE_NM) {
+                        const type = speedResult.RTE_TYPE_NM.toLowerCase();
+                        let mappedClass = '';
+                        if (type.includes('interstate') || type.includes('primary')) mappedClass = 'arterial-major';
+                        else if (type.includes('secondary')) mappedClass = 'collector-major';
+                        else if (type.includes('urban')) mappedClass = 'arterial-minor';
+                        else mappedClass = 'local';
+                        updateField('roadwayClass', mappedClass, 'VDOT');
+                    }
                 }
 
                 // 2. Query Traffic Volume
                 const volumeResult = await queryEsriService(VDOT_SERVICES.TRAFFIC_VOLUME, latlng);
                 if (volumeResult) {
                     updateField('avgDailyTraffic', volumeResult.ADT, 'VDOT');
-                    updateField('fromLocation', volumeResult.START_LABEL, 'VDOT');
-                    updateField('toLocation', volumeResult.END_LABEL, 'VDOT');
+                    if (!speedResult) { // Fallback for labels if speed query failed
+                        updateField('fromLocation', volumeResult.START_LABEL, 'VDOT');
+                        updateField('toLocation', volumeResult.END_LABEL, 'VDOT');
+                    }
                 }
 
-                // 3. Query Crashes
-                const crashResult = await queryEsriService(VDOT_SERVICES.CRASHES, latlng);
-                if (crashResult) {
-                    updateField('crashCount', crashResult.CRASH_COUNT || 0, 'VDOT');
+                // 3. Query Bike/Ped Counts
+                const bikePedResult = await queryEsriService(VDOT_SERVICES.BIKE_PED, latlng, 100); // Larger buffer for point data
+                if (bikePedResult) {
+                    updateField('bicycleVolume', bikePedResult.Bicyclists, 'VDOT');
+                    updateField('pedestrianVolume', bikePedResult.Pedestrian, 'VDOT');
+                }
+
+                // 4. Query Crashes (Count nearby)
+                const crashCollection = await queryEsriService(VDOT_SERVICES.CRASHES, latlng, 100, true);
+                if (crashCollection) {
+                    updateField('crashCount', crashCollection.features.length, 'VDOT');
+                }
+
+                // 5. Check Sidewalks for Checkboxes
+                const sidewalkResult = await queryEsriService(VDOT_SERVICES.SIDEWALKS, latlng, 30);
+                if (sidewalkResult) {
+                    const noSidewalksCheck = document.getElementById('noSidewalks');
+                    if (noSidewalksCheck) noSidewalksCheck.checked = false;
+                    // We could potentially check more specific fields if available
+                } else {
+                    const noSidewalksCheck = document.getElementById('noSidewalks');
+                    if (noSidewalksCheck) noSidewalksCheck.checked = true;
                 }
 
                 // Update coordinates
@@ -2903,15 +3030,15 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
             }
         }
 
-        function queryEsriService(url, latlng) {
+        function queryEsriService(url, latlng, buffer = 50, returnFull = false) {
             return new Promise((resolve, reject) => {
                 L.esri.query({ url: url })
-                    .nearby(latlng, 50) // 50 meter buffer
+                    .nearby(latlng, buffer)
                     .run((error, featureCollection) => {
                         if (error) {
                             reject(error);
-                        } else if (featureCollection.features.length > 0) {
-                            resolve(featureCollection.features[0].properties);
+                        } else if (featureCollection && featureCollection.features && featureCollection.features.length > 0) {
+                            resolve(returnFull ? featureCollection : featureCollection.features[0].properties);
                         } else {
                             resolve(null);
                         }
@@ -3262,6 +3389,15 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 window.vdotSpeedLimitLayer.addTo(embeddedMap);
             } else {
                 embeddedMap.removeLayer(window.vdotSpeedLimitLayer);
+            }
+        });
+
+        document.getElementById('vdotBikePedToggle').addEventListener('change', function () {
+            if (!window.vdotBikePedLayer) return;
+            if (this.checked) {
+                window.vdotBikePedLayer.addTo(embeddedMap);
+            } else {
+                embeddedMap.removeLayer(window.vdotBikePedLayer);
             }
         });
 
