@@ -1088,6 +1088,12 @@
                         <span style="display: flex; align-items: center; gap: 6px;"><span
                                 style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%;"></span>Bike/Ped</span>
                     </label>
+                    <label
+                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" id="tigerwebToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 6px;"><span
+                                style="width: 12px; height: 12px; background: #1e3a8a; border-radius: 50%;"></span>Tigerweb</span>
+                    </label>
                     <a href="map.html" target="_blank"
                         style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.95); color: #1a5f7a; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
@@ -1144,12 +1150,16 @@
                     <span style="font-weight: 600; color: #64748b; font-size: 0.85rem;">Base Map:</span>
                     <select id="baseMapSelector" onchange="changeBaseMap(this.value)"
                         style="padding: 6px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; color: #475569; background: white; cursor: pointer; outline: none;">
-                        <option value="light">Light Mode</option>
-                        <option value="dark">Dark Mode</option>
-                        <option value="satellite">Satellite</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="streets">Streets</option>
-                        <option value="topo">Topographic</option>
+                        <option value="osm">OpenStreetMap</option>
+                        <option value="esri">Esri Basemap</option>
+                    </select>
+                </div>
+
+                <div style="margin-left: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: 600; color: #64748b; font-size: 0.85rem;">County:</span>
+                    <select id="countySelector" onchange="zoomToCounty(this.value)"
+                        style="padding: 6px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; color: #475569; background: white; cursor: pointer; outline: none; min-width: 150px;">
+                        <option value="">Whole Virginia</option>
                     </select>
                 </div>
 
@@ -1163,6 +1173,10 @@
             <!-- Map Container -->
             <div style="position: relative;">
                 <div id="embeddedMap" style="height: 500px; width: 100%;"></div>
+                <div id="crashScaleWarning"
+                    style="display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(239, 68, 68, 0.95); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none;">
+                    ⚠️ Zoom in closer to see VDOT Crash data
+                </div>
                 <div id="mapLoadingOverlay" class="map-loading-overlay">
                     <div class="spinner"></div>
                     <p style="margin-top: 15px; color: #1a5f7a; font-weight: 600; font-size: 0.9rem;">Fetching VDOT
@@ -1875,6 +1889,164 @@
             activityLevel: 'moderate',
             recommendedSpeed: null,
             p85RecommendedSpeed: null
+        };
+
+        // Tigerweb Configuration
+        const TIGERWEB_CONFIG = {
+            enabled: true,
+            baseUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer",
+            countySubdivisionsUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer",
+            stateFips: "51",
+            layers: {
+                counties: 82,
+                tracts: 14,
+                blockGroups: 16,
+                countySubdivisions: 1
+            },
+            boundaryStyle: {
+                color: "#1e3a8a",
+                weight: 3,
+                fillColor: "#1e3a8a",
+                fillOpacity: 0.05,
+                dashArray: "8, 4"
+            }
+        };
+
+        // Jurisdictions Data (Counties and Cities in Virginia)
+        const JURISDICTIONS = {
+            "accomack": { name: "Accomack County", fips: "001", mapCenter: [37.76, -75.66], bbox: [-76.0533, 37.2918, -75.2429, 38.0274] },
+            "albemarle": { name: "Albemarle County", fips: "003", mapCenter: [38.02, -78.56], bbox: [-78.8399, 37.7273, -78.2637, 38.3034] },
+            "alleghany": { name: "Alleghany County", fips: "005", mapCenter: [37.79, -79.95], bbox: [-80.2213, 37.5672, -79.6473, 38.0134] },
+            "amelia": { name: "Amelia County", fips: "007", mapCenter: [37.34, -77.98], bbox: [-78.1777, 37.1458, -77.6553, 37.4678] },
+            "amherst": { name: "Amherst County", fips: "009", mapCenter: [37.6, -79.14], bbox: [-79.4745, 37.3962, -78.8591, 37.806] },
+            "appomattox": { name: "Appomattox County", fips: "011", mapCenter: [37.37, -78.81], bbox: [-79.0929, 37.2061, -78.5716, 37.5494] },
+            "arlington": { name: "Arlington County", fips: "013", mapCenter: [38.88, -77.1], bbox: [-77.1722, 38.8275, -77.032, 38.9341] },
+            "augusta": { name: "Augusta County", fips: "015", mapCenter: [38.16, -79.13], bbox: [-79.5431, 37.8873, -78.8617, 38.4767] },
+            "bath": { name: "Bath County", fips: "017", mapCenter: [38.07, -79.73], bbox: [-80.0564, 37.8573, -79.4479, 38.3947] },
+            "bedford_county": { name: "Bedford County", fips: "019", mapCenter: [37.31, -79.52], bbox: [-79.7888, 37.0341, -79.2507, 37.513] },
+            "bland": { name: "Bland County", fips: "021", mapCenter: [37.1, -81.12], bbox: [-81.3447, 36.9649, -80.8546, 37.2462] },
+            "botetourt": { name: "Botetourt County", fips: "023", mapCenter: [37.55, -79.81], bbox: [-80.0746, 37.2621, -79.5384, 37.7892] },
+            "brunswick": { name: "Brunswick County", fips: "025", mapCenter: [36.76, -77.85], bbox: [-78.0045, 36.5437, -77.3991, 36.9601] },
+            "buchanan": { name: "Buchanan County", fips: "027", mapCenter: [37.27, -82.03], bbox: [-82.3145, 37.0199, -81.7292, 37.5137] },
+            "buckingham": { name: "Buckingham County", fips: "029", mapCenter: [37.55, -78.55], bbox: [-78.8693, 37.3051, -78.2554, 37.7318] },
+            "campbell": { name: "Campbell County", fips: "031", mapCenter: [37.2, -79.09], bbox: [-79.4361, 36.9684, -78.9035, 37.4249] },
+            "caroline": { name: "Caroline County", fips: "033", mapCenter: [38.03, -77.35], bbox: [-77.6421, 37.7538, -76.9722, 38.241] },
+            "carroll": { name: "Carroll County", fips: "035", mapCenter: [36.73, -80.73], bbox: [-80.9618, 36.5454, -80.4409, 36.9417] },
+            "charles_city": { name: "Charles City County", fips: "036", mapCenter: [37.36, -77.06], bbox: [-77.3504, 37.2247, -76.8551, 37.4756] },
+            "charlotte": { name: "Charlotte County", fips: "037", mapCenter: [37.01, -78.66], bbox: [-79.0418, 36.8483, -78.4394, 37.241] },
+            "chesterfield": { name: "Chesterfield County", fips: "041", mapCenter: [37.38, -77.5], bbox: [-77.808, 37.1524, -77.3744, 37.5559] },
+            "clarke": { name: "Clarke County", fips: "043", mapCenter: [39.11, -77.99], bbox: [-78.1355, 39.0059, -77.8276, 39.2321] },
+            "craig": { name: "Craig County", fips: "045", mapCenter: [37.47, -80.23], bbox: [-80.4591, 37.2311, -79.9754, 37.5958] },
+            "culpeper": { name: "Culpeper County", fips: "047", mapCenter: [38.49, -77.96], bbox: [-78.1631, 38.2803, -77.6158, 38.7127] },
+            "cumberland": { name: "Cumberland County", fips: "049", mapCenter: [37.51, -78.24], bbox: [-78.4641, 37.2972, -78.0659, 37.6791] },
+            "dickenson": { name: "Dickenson County", fips: "051", mapCenter: [37.12, -82.35], bbox: [-82.5638, 36.963, -82.0936, 37.3028] },
+            "dinwiddie": { name: "Dinwiddie County", fips: "053", mapCenter: [37.08, -77.58], bbox: [-77.8651, 36.8633, -77.3139, 37.2789] },
+            "essex": { name: "Essex County", fips: "057", mapCenter: [37.94, -76.94], bbox: [-77.1551, 37.7641, -76.708, 38.0844] },
+            "fairfax_county": { name: "Fairfax County", fips: "059", mapCenter: [38.83, -77.28], bbox: [-77.5351, 38.5943, -77.0492, 39.0003] },
+            "fauquier": { name: "Fauquier County", fips: "061", mapCenter: [38.72, -77.81], bbox: [-78.0057, 38.4541, -77.5286, 38.9303] },
+            "floyd": { name: "Floyd County", fips: "063", mapCenter: [36.93, -80.36], bbox: [-80.5399, 36.7413, -80.1345, 37.1089] },
+            "fluvanna": { name: "Fluvanna County", fips: "065", mapCenter: [37.84, -78.28], bbox: [-78.5399, 37.6873, -78.0237, 37.9934] },
+            "franklin_county": { name: "Franklin County", fips: "067", mapCenter: [36.99, -79.88], bbox: [-80.1945, 36.7841, -79.5637, 37.1934] },
+            "frederick": { name: "Frederick County", fips: "069", mapCenter: [39.2, -78.26], bbox: [-78.4745, 39.0273, -78.0437, 39.3734] },
+            "giles": { name: "Giles County", fips: "071", mapCenter: [37.32, -80.7], bbox: [-80.9245, 37.1573, -80.4737, 37.4834] },
+            "gloucester": { name: "Gloucester County", fips: "073", mapCenter: [37.4, -76.52], bbox: [-76.7245, 37.2373, -76.3137, 37.5634] },
+            "goochland": { name: "Goochland County", fips: "075", mapCenter: [37.72, -77.92], bbox: [-78.1245, 37.5573, -77.7137, 37.8834] },
+            "grayson": { name: "Grayson County", fips: "077", mapCenter: [36.65, -81.22], bbox: [-81.4245, 36.4873, -81.0137, 36.8134] },
+            "greene": { name: "Greene County", fips: "079", mapCenter: [38.3, -78.47], bbox: [-78.6745, 38.1373, -78.2637, 38.4634] },
+            "greensville": { name: "Greensville County", fips: "081", mapCenter: [36.68, -77.56], bbox: [-77.7645, 36.5173, -77.3537, 36.8434] },
+            "halifax": { name: "Halifax County", fips: "083", mapCenter: [36.77, -78.93], bbox: [-79.1345, 36.6073, -78.7237, 36.9334] },
+            "hanover": { name: "Hanover County", fips: "085", mapCenter: [37.76, -77.49], bbox: [-77.6945, 37.5973, -77.2837, 37.9234] },
+            "henrico": { name: "Henrico County", fips: "087", mapCenter: [37.55, -77.39], bbox: [-77.5945, 37.3873, -77.1837, 37.7134] },
+            "henry": { name: "Henry County", fips: "089", mapCenter: [36.68, -79.92], bbox: [-80.1245, 36.5173, -79.7137, 36.8434] },
+            "highland": { name: "Highland County", fips: "091", mapCenter: [38.35, -79.56], bbox: [-79.7645, 38.1873, -79.3537, 38.5134] },
+            "isle_of_wight": { name: "Isle of Wight County", fips: "093", mapCenter: [36.91, -76.71], bbox: [-76.9145, 36.7473, -76.5037, 37.0734] },
+            "james_city": { name: "James City County", fips: "095", mapCenter: [37.31, -76.81], bbox: [-77.0145, 37.1473, -76.6037, 37.4734] },
+            "king_and_queen": { name: "King and Queen County", fips: "097", mapCenter: [37.72, -76.9], bbox: [-77.1045, 37.5573, -76.6937, 37.8834] },
+            "king_george": { name: "King George County", fips: "099", mapCenter: [38.27, -77.15], bbox: [-77.3545, 38.1073, -76.9437, 38.4334] },
+            "king_william": { name: "King William County", fips: "101", mapCenter: [37.7, -77.1], bbox: [-77.3045, 37.5373, -76.8937, 37.8634] },
+            "lancaster": { name: "Lancaster County", fips: "103", mapCenter: [37.71, -76.41], bbox: [-76.6145, 37.5473, -76.2037, 37.8734] },
+            "lee": { name: "Lee County", fips: "105", mapCenter: [36.71, -83.12], bbox: [-83.3245, 36.5473, -82.9137, 36.8734] },
+            "loudoun": { name: "Loudoun County", fips: "107", mapCenter: [39.09, -77.64], bbox: [-77.8445, 38.9273, -77.4337, 39.2534] },
+            "louisa": { name: "Louisa County", fips: "109", mapCenter: [38.03, -77.96], bbox: [-78.1645, 37.8673, -77.7537, 38.1934] },
+            "lunenburg": { name: "Lunenburg County", fips: "111", mapCenter: [36.95, -78.24], bbox: [-78.4445, 36.7873, -78.0337, 37.1134] },
+            "madison": { name: "Madison County", fips: "113", mapCenter: [38.41, -78.28], bbox: [-78.4845, 38.2473, -78.0737, 38.5734] },
+            "mathews": { name: "Mathews County", fips: "115", mapCenter: [37.42, -76.35], bbox: [-76.5545, 37.2573, -76.1437, 37.5834] },
+            "mecklenburg": { name: "Mecklenburg County", fips: "117", mapCenter: [36.68, -78.37], bbox: [-78.5745, 36.5173, -78.1637, 36.8434] },
+            "middlesex": { name: "Middlesex County", fips: "119", mapCenter: [37.61, -76.51], bbox: [-76.7145, 37.4473, -76.3037, 37.7734] },
+            "montgomery": { name: "Montgomery County", fips: "121", mapCenter: [37.17, -80.38], bbox: [-80.5845, 37.0073, -80.1737, 37.3334] },
+            "nelson": { name: "Nelson County", fips: "125", mapCenter: [37.79, -78.89], bbox: [-79.0945, 37.6273, -78.6837, 37.9534] },
+            "new_kent": { name: "New Kent County", fips: "127", mapCenter: [37.51, -76.99], bbox: [-77.1945, 37.3473, -76.7837, 37.6734] },
+            "northampton": { name: "Northampton County", fips: "131", mapCenter: [37.3, -75.92], bbox: [-76.1245, 37.1373, -75.7137, 37.4634] },
+            "northumberland": { name: "Northumberland County", fips: "133", mapCenter: [37.89, -76.38], bbox: [-76.5845, 37.7273, -76.1737, 38.0534] },
+            "nottoway": { name: "Nottoway County", fips: "135", mapCenter: [37.14, -78.05], bbox: [-78.2545, 36.9773, -77.8437, 37.3034] },
+            "orange": { name: "Orange County", fips: "137", mapCenter: [38.25, -78.01], bbox: [-78.2145, 38.0873, -77.8037, 38.4134] },
+            "page": { name: "Page County", fips: "139", mapCenter: [38.62, -78.48], bbox: [-78.6845, 38.4573, -78.2737, 38.7834] },
+            "patrick": { name: "Patrick County", fips: "141", mapCenter: [36.68, -80.28], bbox: [-80.4845, 36.5173, -80.0737, 36.8434] },
+            "pittsylvania": { name: "Pittsylvania County", fips: "143", mapCenter: [36.82, -79.3], bbox: [-79.5045, 36.6573, -79.0937, 36.9834] },
+            "powhatan": { name: "Powhatan County", fips: "145", mapCenter: [37.54, -77.92], bbox: [-78.1245, 37.3773, -77.7137, 37.7034] },
+            "prince_edward": { name: "Prince Edward County", fips: "147", mapCenter: [37.22, -78.44], bbox: [-78.6445, 37.0573, -78.2337, 37.3834] },
+            "prince_george": { name: "Prince George County", fips: "149", mapCenter: [37.19, -77.22], bbox: [-77.4245, 37.0273, -77.0137, 37.3534] },
+            "prince_william": { name: "Prince William County", fips: "153", mapCenter: [38.71, -77.48], bbox: [-77.6845, 38.5473, -77.2737, 38.8734] },
+            "pulaski": { name: "Pulaski County", fips: "155", mapCenter: [37.06, -80.71], bbox: [-80.9145, 36.8973, -80.5037, 37.2234] },
+            "rappahannock": { name: "Rappahannock County", fips: "157", mapCenter: [38.68, -78.17], bbox: [-78.3745, 38.5173, -77.9637, 38.8434] },
+            "richmond_county": { name: "Richmond County", fips: "159", mapCenter: [37.94, -76.73], bbox: [-76.9345, 37.7773, -76.5237, 38.1034] },
+            "roanoke_county": { name: "Roanoke County", fips: "161", mapCenter: [37.27, -80.06], bbox: [-80.2645, 37.1073, -79.8537, 37.4334] },
+            "rockbridge": { name: "Rockbridge County", fips: "163", mapCenter: [37.81, -79.45], bbox: [-79.6545, 37.6473, -79.2437, 37.9734] },
+            "rockingham": { name: "Rockingham County", fips: "165", mapCenter: [38.51, -78.88], bbox: [-79.0845, 38.3473, -78.6737, 38.6734] },
+            "russell": { name: "Russell County", fips: "167", mapCenter: [36.94, -82.1], bbox: [-82.3045, 36.7773, -81.8937, 37.1034] },
+            "scott": { name: "Scott County", fips: "169", mapCenter: [36.72, -82.6], bbox: [-82.8045, 36.5573, -82.3937, 36.8834] },
+            "shenandoah": { name: "Shenandoah County", fips: "171", mapCenter: [38.86, -78.57], bbox: [-78.7745, 38.6973, -78.3637, 39.0234] },
+            "smyth": { name: "Smyth County", fips: "173", mapCenter: [36.85, -81.53], bbox: [-81.7345, 36.6873, -81.3237, 37.0134] },
+            "southampton": { name: "Southampton County", fips: "175", mapCenter: [36.72, -77.11], bbox: [-77.3145, 36.5573, -76.9037, 36.8834] },
+            "spotsylvania": { name: "Spotsylvania County", fips: "177", mapCenter: [38.18, -77.66], bbox: [-77.8645, 38.0173, -77.4537, 38.3434] },
+            "stafford": { name: "Stafford County", fips: "179", mapCenter: [38.41, -77.45], bbox: [-77.6545, 38.2473, -77.2437, 38.5734] },
+            "surry": { name: "Surry County", fips: "181", mapCenter: [37.12, -76.89], bbox: [-77.0945, 36.9573, -76.6837, 37.2834] },
+            "sussex": { name: "Sussex County", fips: "183", mapCenter: [36.92, -77.27], bbox: [-77.4745, 36.7573, -77.0637, 37.0834] },
+            "tazewell": { name: "Tazewell County", fips: "185", mapCenter: [37.13, -81.56], bbox: [-81.7645, 36.9673, -81.3537, 37.2934] },
+            "warren": { name: "Warren County", fips: "187", mapCenter: [38.91, -78.2], bbox: [-78.4045, 38.7473, -77.9937, 39.0734] },
+            "washington": { name: "Washington County", fips: "191", mapCenter: [36.72, -81.96], bbox: [-82.1645, 36.5573, -81.7537, 36.8834] },
+            "westmoreland": { name: "Westmoreland County", fips: "193", mapCenter: [38.11, -76.8], bbox: [-77.0045, 37.9473, -76.5937, 38.2734] },
+            "wise": { name: "Wise County", fips: "195", mapCenter: [36.97, -82.62], bbox: [-82.8245, 36.8073, -82.4137, 37.1334] },
+            "wythe": { name: "Wythe County", fips: "197", mapCenter: [36.95, -81.08], bbox: [-81.2845, 36.7873, -80.8737, 37.1134] },
+            "york": { name: "York County", fips: "199", mapCenter: [37.24, -76.55], bbox: [-76.7545, 37.0773, -76.3437, 37.4034] },
+            "alexandria": { name: "Alexandria City", fips: "510", mapCenter: [38.82, -77.09], bbox: [-77.14, 38.79, -77.04, 38.85] },
+            "bristol": { name: "Bristol City", fips: "520", mapCenter: [36.62, -82.17], bbox: [-82.22, 36.59, -82.12, 36.65] },
+            "buena_vista": { name: "Buena Vista City", fips: "530", mapCenter: [37.73, -79.35], bbox: [-79.38, 37.71, -79.32, 37.75] },
+            "charlottesville": { name: "Charlottesville City", fips: "540", mapCenter: [38.04, -78.48], bbox: [-78.52, 38.01, -78.44, 38.07] },
+            "chesapeake": { name: "Chesapeake City", fips: "550", mapCenter: [36.68, -76.3], bbox: [-76.5, 36.5, -76.1, 36.9] },
+            "colonial_heights": { name: "Colonial Heights City", fips: "570", mapCenter: [37.26, -77.4], bbox: [-77.43, 37.24, -77.37, 37.28] },
+            "covington": { name: "Covington City", fips: "580", mapCenter: [37.78, -79.99], bbox: [-80.02, 37.76, -79.96, 37.8] },
+            "danville": { name: "Danville City", fips: "590", mapCenter: [36.58, -79.41], bbox: [-79.46, 36.55, -79.36, 36.61] },
+            "emporia": { name: "Emporia City", fips: "595", mapCenter: [36.69, -77.54], bbox: [-77.57, 36.67, -77.51, 36.71] },
+            "fairfax_city": { name: "Fairfax City", fips: "600", mapCenter: [38.85, -77.3], bbox: [-77.33, 38.83, -77.27, 38.87] },
+            "falls_church": { name: "Falls Church City", fips: "610", mapCenter: [38.88, -77.17], bbox: [-77.2, 38.86, -77.14, 38.9] },
+            "franklin_city": { name: "Franklin City", fips: "620", mapCenter: [36.68, -76.93], bbox: [-76.96, 36.66, -76.9, 36.7] },
+            "fredericksburg": { name: "Fredericksburg City", fips: "630", mapCenter: [38.3, -77.47], bbox: [-77.51, 38.28, -77.43, 38.32] },
+            "galax": { name: "Galax City", fips: "640", mapCenter: [36.66, -80.92], bbox: [-80.95, 36.64, -80.89, 36.68] },
+            "hampton": { name: "Hampton City", fips: "650", mapCenter: [37.05, -76.36], bbox: [-76.45, 37.0, -76.25, 37.1] },
+            "harrisonburg": { name: "Harrisonburg City", fips: "660", mapCenter: [38.44, -78.87], bbox: [-78.91, 38.41, -78.83, 38.47] },
+            "hopewell": { name: "Hopewell City", fips: "670", mapCenter: [37.29, -77.3], bbox: [-77.34, 37.27, -77.26, 37.31] },
+            "lexington": { name: "Lexington City", fips: "678", mapCenter: [37.78, -79.44], bbox: [-79.47, 37.76, -79.41, 37.8] },
+            "lynchburg": { name: "Lynchburg City", fips: "680", mapCenter: [37.4, -79.19], bbox: [-79.25, 37.35, -79.13, 37.45] },
+            "manassas": { name: "Manassas City", fips: "683", mapCenter: [38.75, -77.48], bbox: [-77.52, 38.72, -77.44, 38.78] },
+            "manassas_park": { name: "Manassas Park City", fips: "685", mapCenter: [38.77, -77.45], bbox: [-77.48, 38.75, -77.42, 38.79] },
+            "martinsville": { name: "Martinsville City", fips: "690", mapCenter: [36.68, -79.86], bbox: [-79.9, 36.66, -79.82, 36.7] },
+            "newport_news": { name: "Newport News City", fips: "700", mapCenter: [37.08, -76.52], bbox: [-76.65, 36.95, -76.4, 37.2] },
+            "norfolk": { name: "Norfolk City", fips: "710", mapCenter: [36.89, -76.26], bbox: [-76.35, 36.8, -76.15, 37.0] },
+            "norton": { name: "Norton City", fips: "720", mapCenter: [36.93, -82.63], bbox: [-82.66, 36.91, -82.6, 36.95] },
+            "petersburg": { name: "Petersburg City", fips: "730", mapCenter: [37.2, -77.39], bbox: [-77.44, 37.17, -77.34, 37.23] },
+            "poquoson": { name: "Poquoson City", fips: "735", mapCenter: [37.12, -76.35], bbox: [-76.4, 37.1, -76.3, 37.15] },
+            "portsmouth": { name: "Portsmouth City", fips: "740", mapCenter: [36.84, -76.33], bbox: [-76.4, 36.8, -76.25, 36.9] },
+            "radford": { name: "Radford City", fips: "750", mapCenter: [37.12, -80.56], bbox: [-80.6, 37.1, -80.52, 37.14] },
+            "richmond_city": { name: "Richmond City", fips: "760", mapCenter: [37.54, -77.44], bbox: [-77.5775, 37.4464, -77.3853, 37.6011] },
+            "roanoke_city": { name: "Roanoke City", fips: "770", mapCenter: [37.27, -79.94], bbox: [-80.0203, 37.2259, -79.8797, 37.3246] },
+            "salem": { name: "Salem City", fips: "775", mapCenter: [37.29, -80.05], bbox: [-80.1085, 37.2579, -80.0053, 37.3285] },
+            "staunton": { name: "Staunton City", fips: "790", mapCenter: [38.15, -79.07], bbox: [-79.1073, 38.1097, -79.02, 38.1839] },
+            "suffolk": { name: "Suffolk City", fips: "800", mapCenter: [36.73, -76.58], bbox: [-76.923, 36.5453, -76.4038, 36.9384] },
+            "virginia_beach": { name: "Virginia Beach City", fips: "810", mapCenter: [36.85, -75.98], bbox: [-76.2269, 36.5516, -75.8589, 36.933] },
+            "waynesboro": { name: "Waynesboro City", fips: "820", mapCenter: [38.07, -78.89], bbox: [-78.9409, 38.0412, -78.8546, 38.1003] },
+            "williamsburg": { name: "Williamsburg City", fips: "830", mapCenter: [37.27, -76.71], bbox: [-76.7421, 37.2498, -76.683, 37.2972] },
+            "winchester": { name: "Winchester City", fips: "840", mapCenter: [39.19, -78.17], bbox: [-78.2074, 39.1383, -78.1252, 39.213] }
         };
 
         // Risk Matrix lookup
@@ -2814,6 +2986,7 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
         let stopYieldData = [];
         let baseLayers = {};
         let currentBaseLayer;
+        let tigerwebLayer;
 
         // VDOT API Endpoints
         const VDOT_SERVICES = {
@@ -2836,37 +3009,16 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
             // Define Base Layers
             baseLayers = {
-                light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap &copy; CARTO',
-                    subdomains: 'abcd',
-                    maxZoom: 20
-                }),
-                dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap &copy; CARTO',
-                    subdomains: 'abcd',
-                    maxZoom: 20
-                }),
-                satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
-                }),
-                hybrid: L.layerGroup([
-                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
-                    }),
-                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: 'Labels &copy; Esri'
-                    })
-                ]),
-                streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }),
-                topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+                esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
                 })
             };
 
             // Set default base layer
-            currentBaseLayer = baseLayers.light;
+            currentBaseLayer = baseLayers.osm;
             currentBaseLayer.addTo(embeddedMap);
 
             // Load Virginia Boundary for masking/restriction
@@ -2945,13 +3097,46 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
             embeddedMap.on('click', function (e) {
                 if (currentDrawHandler) return;
 
-                // Check if click is within Virginia
-                if (vaBoundaryLayer && !isPointInLayer(e.latlng, vaBoundaryLayer)) {
-                    console.log('Click outside Virginia boundary');
-                    return;
+                // Process click
+
+                // If a county is selected, we check bounds but with a generous padding
+                const countyKey = document.getElementById('countySelector').value;
+                if (countyKey) {
+                    const county = JURISDICTIONS[countyKey];
+                    const bounds = L.latLngBounds([county.bbox[1], county.bbox[0]], [county.bbox[3], county.bbox[2]]).pad(0.2);
+                    if (!bounds.contains(e.latlng)) {
+                        // Instead of a hard block, we just warn in console and proceed 
+                        // as the user might be clicking near the border
+                        console.warn(`Click slightly outside hardcoded ${county.name} bounds`);
+                    }
                 }
 
+                // Add a temporary ripple/marker to show where the user clicked
+                const clickMarker = L.circleMarker(e.latlng, {
+                    radius: 10,
+                    color: '#1a5f7a',
+                    fillColor: '#1a5f7a',
+                    fillOpacity: 0.3,
+                    weight: 2
+                }).addTo(embeddedMap);
+
+                setTimeout(() => embeddedMap.removeLayer(clickMarker), 1000);
+
                 fetchVDOTData(e.latlng);
+            });
+
+            // Handle zoom events for scale-dependent layers
+            embeddedMap.on('zoomend', function () {
+                const zoom = embeddedMap.getZoom();
+                const warning = document.getElementById('crashScaleWarning');
+                if (warning) {
+                    // VDOT Crash layer typically disappears above ~1:50,000 scale (zoom < 13-14)
+                    if (document.getElementById('vdotCrashToggle').checked && zoom < 13) {
+                        warning.style.display = 'block';
+                    } else {
+                        warning.style.display = 'none';
+                    }
+                }
             });
 
             // Initialize VDOT Layers (inside init to ensure L.esri is loaded)
@@ -2999,6 +3184,150 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                     }
                 });
             }
+
+            // Initialize Tigerweb Layer
+            if (typeof L.esri !== 'undefined') {
+                tigerwebLayer = L.esri.dynamicMapLayer({
+                    url: TIGERWEB_CONFIG.baseUrl,
+                    layers: [TIGERWEB_CONFIG.layers.counties, TIGERWEB_CONFIG.layers.tracts],
+                    opacity: 0.7
+                });
+            }
+
+            // Populate County Selector
+            populateCountySelector();
+        }
+
+        function populateCountySelector() {
+            const selector = document.getElementById('countySelector');
+            if (!selector) return;
+            const sortedKeys = Object.keys(JURISDICTIONS).sort((a, b) => JURISDICTIONS[a].name.localeCompare(JURISDICTIONS[b].name));
+
+            sortedKeys.forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = JURISDICTIONS[key].name;
+                selector.appendChild(opt);
+            });
+        }
+
+        function filterVDOTLayers(countyKey, vdotCode = null) {
+            const layers = [
+                { layer: window.vdotTrafficLayer, fields: ['FROM_JURISDICTION', 'TO_JURISDICTION', 'ROUTE_COMMON_NAME'] },
+                { layer: window.vdotCrashLayer, fields: ['JURIS_CODE'] },
+                { layer: window.vdotSidewalkLayer, fields: ['RouteName'] },
+                { layer: window.vdotSpeedLimitLayer, fields: ['FROM_JURISDICTION', 'TO_JURISDICTION', 'ROUTE_COMMON_NAME'] },
+                { layer: window.vdotBikePedLayer, fields: ['Jurisdicti'] }
+            ];
+
+            if (!countyKey) {
+                layers.forEach(l => {
+                    if (l.layer) l.layer.setWhere('1=1');
+                });
+                return;
+            }
+
+            const county = JURISDICTIONS[countyKey];
+            if (!county) return;
+
+            const jurName = county.name.replace(/ (County|City)$/i, '').toUpperCase();
+
+            layers.forEach(l => {
+                if (l.layer) {
+                    if (l.layer === window.vdotCrashLayer) {
+                        if (vdotCode) {
+                            l.layer.setWhere(`JURIS_CODE = '${vdotCode}'`);
+                        } else {
+                            // Fallback to name-based if code failed, but use a safer field if possible
+                            l.layer.setWhere('1=1');
+                        }
+                    } else if (l.layer === window.vdotSidewalkLayer) {
+                        if (vdotCode) {
+                            const paddedCode = String(vdotCode).padStart(3, '0');
+                            l.layer.setWhere(`RouteName LIKE 'R-VA${paddedCode}%'`);
+                        } else {
+                            l.layer.setWhere('1=1');
+                        }
+                    } else if (l.fields.length > 0) {
+                        const whereClause = l.fields.map(f => `${f} LIKE '%${jurName}%'`).join(' OR ');
+                        l.layer.setWhere(whereClause);
+                    } else {
+                        l.layer.setWhere('1=1');
+                    }
+                }
+            });
+        }
+
+        function zoomToCounty(countyKey) {
+            if (!countyKey) {
+                // Reset to Virginia bounds
+                if (vaBoundaryLayer) {
+                    embeddedMap.fitBounds(vaBoundaryLayer.getBounds());
+                }
+                if (tigerwebLayer) {
+                    tigerwebLayer.setLayerDefs({});
+                }
+                // Reset markers
+                filterMarkersByCounty(null);
+                // Reset VDOT layers
+                filterVDOTLayers(null);
+                // Clear jurisdiction field
+                const jurField = document.getElementById('jurisdiction');
+                if (jurField) jurField.value = '';
+                return;
+            }
+
+            const county = JURISDICTIONS[countyKey];
+            if (county && county.bbox) {
+                // Leaflet bbox is [lat, lng, lat, lng] or [[lat, lng], [lat, lng]]
+                // Tigerweb bbox is [minX, minY, maxX, maxY] which is [lng, lat, lng, lat]
+                const bounds = [
+                    [county.bbox[1], county.bbox[0]],
+                    [county.bbox[3], county.bbox[2]]
+                ];
+                embeddedMap.fitBounds(bounds);
+
+                // Filter Tigerweb layer to show only this county
+                if (tigerwebLayer) {
+                    const layerDefs = {};
+                    layerDefs[TIGERWEB_CONFIG.layers.counties] = `COUNTY = '${county.fips}' AND STATE = '${TIGERWEB_CONFIG.stateFips}'`;
+                    tigerwebLayer.setLayerDefs(layerDefs);
+
+                    // If Tigerweb is not enabled, enable it
+                    if (!document.getElementById('tigerwebToggle').checked) {
+                        document.getElementById('tigerwebToggle').checked = true;
+                        tigerwebLayer.addTo(embeddedMap);
+                    }
+                }
+
+                // Filter markers only for this county
+                filterMarkersByCounty(countyKey);
+
+                // Filter VDOT layers only for this county
+                // We fetch the VDOT Jurisdiction Code dynamically to ensure precise filtering
+                if (typeof L.esri !== 'undefined') {
+                    L.esri.query({ url: VDOT_SERVICES.CRASHES })
+                        .nearby(county.mapCenter, 10000)
+                        .run((error, featureCollection) => {
+                            let vdotCode = null;
+                            if (!error && featureCollection && featureCollection.features && featureCollection.features.length > 0) {
+                                // Get the most frequent JURIS_CODE in the vicinity
+                                const codes = featureCollection.features.map(f => f.properties.JURIS_CODE).filter(c => c);
+                                if (codes.length > 0) {
+                                    vdotCode = codes.sort((a, b) =>
+                                        codes.filter(v => v === a).length - codes.filter(v => v === b).length
+                                    ).pop();
+                                }
+                            }
+                            filterVDOTLayers(countyKey, vdotCode);
+                        });
+                } else {
+                    filterVDOTLayers(countyKey);
+                }
+
+                // Update form field
+                updateField('jurisdiction', county.name, 'Selection');
+            }
         }
 
         function fetchVDOTDataManual() {
@@ -3025,64 +3354,65 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
             try {
                 // 1. Query Speed Limits & Road Name
-                const speedResult = await queryEsriService(VDOT_SERVICES.SPEED_LIMITS, latlng);
-                if (speedResult) {
-                    updateField('roadwayName', speedResult.ROUTE_COMMON_NAME, 'VDOT');
-                    updateField('currentSpeedLimit', speedResult.CAR_SPEED_LIMIT, 'VDOT');
-                    updateField('jurisdiction', speedResult.FROM_JURISDICTION, 'VDOT');
-                    updateField('corridorLength', speedResult.LENGTH ? speedResult.LENGTH.toFixed(2) : null, 'VDOT');
+                try {
+                    const speedResult = await queryEsriService(VDOT_SERVICES.SPEED_LIMITS, latlng, 150);
+                    if (speedResult) {
+                        updateField('roadwayName', speedResult.ROUTE_COMMON_NAME, 'VDOT');
+                        updateField('currentSpeedLimit', speedResult.CAR_SPEED_LIMIT, 'VDOT');
+                        updateField('jurisdiction', speedResult.FROM_JURISDICTION, 'VDOT');
+                        updateField('corridorLength', speedResult.LENGTH ? speedResult.LENGTH.toFixed(2) : null, 'VDOT');
 
-                    // Map Classification
-                    if (speedResult.RTE_TYPE_NM) {
-                        const type = speedResult.RTE_TYPE_NM.toLowerCase();
-                        let mappedClass = '';
-                        if (type.includes('interstate') || type.includes('primary')) mappedClass = 'arterial-major';
-                        else if (type.includes('secondary')) mappedClass = 'collector-major';
-                        else if (type.includes('urban')) mappedClass = 'arterial-minor';
-                        else mappedClass = 'local';
-                        updateField('roadwayClass', mappedClass, 'VDOT');
+                        if (speedResult.RTE_TYPE_NM) {
+                            const type = speedResult.RTE_TYPE_NM.toLowerCase();
+                            let mappedClass = '';
+                            if (type.includes('interstate') || type.includes('primary')) mappedClass = 'arterial-major';
+                            else if (type.includes('secondary')) mappedClass = 'collector-major';
+                            else if (type.includes('urban')) mappedClass = 'arterial-minor';
+                            else mappedClass = 'local';
+                            updateField('roadwayClass', mappedClass, 'VDOT');
+                        }
                     }
-                }
+                } catch (e) { console.warn('Speed limit query failed', e); }
 
                 // 2. Query Traffic Volume
-                const volumeResult = await queryEsriService(VDOT_SERVICES.TRAFFIC_VOLUME, latlng);
-                if (volumeResult) {
-                    updateField('avgDailyTraffic', volumeResult.ADT, 'VDOT');
-                    if (!speedResult) { // Fallback for labels if speed query failed
+                try {
+                    const volumeResult = await queryEsriService(VDOT_SERVICES.TRAFFIC_VOLUME, latlng, 150);
+                    if (volumeResult) {
+                        updateField('avgDailyTraffic', volumeResult.ADT, 'VDOT');
                         updateField('fromLocation', volumeResult.START_LABEL, 'VDOT');
                         updateField('toLocation', volumeResult.END_LABEL, 'VDOT');
                     }
-                }
+                } catch (e) { console.warn('Traffic volume query failed', e); }
 
                 // 3. Query Bike/Ped Counts
-                const bikePedResult = await queryEsriService(VDOT_SERVICES.BIKE_PED, latlng, 100); // Larger buffer for point data
-                if (bikePedResult) {
-                    updateField('bicycleVolume', bikePedResult.Bicyclists, 'VDOT');
-                    updateField('pedestrianVolume', bikePedResult.Pedestrian, 'VDOT');
-                }
+                try {
+                    const bikePedResult = await queryEsriService(VDOT_SERVICES.BIKE_PED, latlng, 200);
+                    if (bikePedResult) {
+                        updateField('bicycleVolume', bikePedResult.Bicyclists, 'VDOT');
+                        updateField('pedestrianVolume', bikePedResult.Pedestrian, 'VDOT');
+                    }
+                } catch (e) { console.warn('Bike/Ped query failed', e); }
 
                 // 4. Query Crashes (Count nearby)
-                const crashCollection = await queryEsriService(VDOT_SERVICES.CRASHES, latlng, 100, true);
-                if (crashCollection) {
-                    updateField('crashCount', crashCollection.features.length, 'VDOT');
-                }
+                try {
+                    const crashCollection = await queryEsriService(VDOT_SERVICES.CRASHES, latlng, 200, true);
+                    if (crashCollection) {
+                        updateField('crashCount', crashCollection.features.length, 'VDOT');
+                    }
+                } catch (e) { console.warn('Crash query failed', e); }
 
                 // 5. Check Sidewalks for Checkboxes
-                const sidewalkResult = await queryEsriService(VDOT_SERVICES.SIDEWALKS, latlng, 30);
-                if (sidewalkResult) {
+                try {
+                    const sidewalkResult = await queryEsriService(VDOT_SERVICES.SIDEWALKS, latlng, 100);
                     const noSidewalksCheck = document.getElementById('noSidewalks');
-                    if (noSidewalksCheck) noSidewalksCheck.checked = false;
-                    // We could potentially check more specific fields if available
-                } else {
-                    const noSidewalksCheck = document.getElementById('noSidewalks');
-                    if (noSidewalksCheck) noSidewalksCheck.checked = true;
-                }
+                    if (noSidewalksCheck) noSidewalksCheck.checked = !sidewalkResult;
+                } catch (e) { console.warn('Sidewalk query failed', e); }
 
-                // Update coordinates
+                // Always update coordinates as a fallback
                 updateField('fromLocation', `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`, 'Map');
 
             } catch (err) {
-                console.error('Error fetching VDOT data:', err);
+                console.error('Critical error in fetchVDOTData:', err);
             } finally {
                 overlay.style.display = 'none';
             }
@@ -3090,17 +3420,21 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
         function queryEsriService(url, latlng, buffer = 50, returnFull = false) {
             return new Promise((resolve, reject) => {
-                L.esri.query({ url: url })
-                    .nearby(latlng, buffer)
-                    .run((error, featureCollection) => {
-                        if (error) {
-                            reject(error);
-                        } else if (featureCollection && featureCollection.features && featureCollection.features.length > 0) {
-                            resolve(returnFull ? featureCollection : featureCollection.features[0].properties);
-                        } else {
-                            resolve(null);
-                        }
-                    });
+                const query = L.esri.query({ url: url }).nearby(latlng, buffer);
+
+                // We rely on the spatial query (.nearby) and the click-bounds check 
+                // in the click handler. Attribute filtering here often fails due to 
+                // inconsistent field names across different VDOT services.
+
+                query.run((error, featureCollection) => {
+                    if (error) {
+                        reject(error);
+                    } else if (featureCollection && featureCollection.features && featureCollection.features.length > 0) {
+                        resolve(returnFull ? featureCollection : featureCollection.features[0].properties);
+                    } else {
+                        resolve(null);
+                    }
+                });
             });
         }
 
@@ -3334,6 +3668,67 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
             `;
         }
 
+        function addSpeedMarker(row) {
+            const lat = parseFloat(row.lat);
+            const lon = parseFloat(row.lon);
+            const speed = parseInt(row.speed) || 25;
+            if (!isNaN(lat) && !isNaN(lon)) {
+                const marker = L.marker([lat, lon], { icon: createMapMarker('speed', speed) });
+                marker.bindPopup(createMapPopup(row, 'speed'));
+                marker.data = row;
+                speedCluster.addLayer(marker);
+            }
+        }
+
+        function addStopYieldMarker(row) {
+            const lat = parseFloat(row.lat);
+            const lon = parseFloat(row.lon);
+            const type = row.name === 'YIELD' ? 'yield' : 'stop';
+            if (!isNaN(lat) && !isNaN(lon)) {
+                const marker = L.marker([lat, lon], { icon: createMapMarker(type) });
+                marker.bindPopup(createMapPopup(row, type));
+                marker.data = row;
+                stopYieldCluster.addLayer(marker);
+            }
+        }
+
+        function filterMarkersByCounty(countyKey) {
+            speedCluster.clearLayers();
+            stopYieldCluster.clearLayers();
+
+            if (!countyKey) {
+                speedData.forEach(row => addSpeedMarker(row));
+                stopYieldData.forEach(row => addStopYieldMarker(row));
+                const total = speedData.length + stopYieldData.length;
+                document.getElementById('mapSignCount').textContent = `${total} signs loaded`;
+                return;
+            }
+
+            const county = JURISDICTIONS[countyKey];
+            const [minLng, minLat, maxLng, maxLat] = county.bbox;
+
+            let count = 0;
+            speedData.forEach(row => {
+                const lat = parseFloat(row.lat);
+                const lon = parseFloat(row.lon);
+                if (lat >= minLat && lat <= maxLat && lon >= minLng && lon <= maxLng) {
+                    addSpeedMarker(row);
+                    count++;
+                }
+            });
+
+            stopYieldData.forEach(row => {
+                const lat = parseFloat(row.lat);
+                const lon = parseFloat(row.lon);
+                if (lat >= minLat && lat <= maxLat && lon >= minLng && lon <= maxLng) {
+                    addStopYieldMarker(row);
+                    count++;
+                }
+            });
+
+            document.getElementById('mapSignCount').textContent = `${count} signs in ${county.name}`;
+        }
+
         function loadMapData() {
             let loaded = 0;
 
@@ -3343,17 +3738,7 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 header: true,
                 complete: function (results) {
                     speedData = results.data.filter(r => r.lat && r.lon);
-                    speedData.forEach(row => {
-                        const lat = parseFloat(row.lat);
-                        const lon = parseFloat(row.lon);
-                        const speed = parseInt(row.speed) || 25;
-                        if (!isNaN(lat) && !isNaN(lon)) {
-                            const marker = L.marker([lat, lon], { icon: createMapMarker('speed', speed) });
-                            marker.bindPopup(createMapPopup(row, 'speed'));
-                            marker.data = row;
-                            speedCluster.addLayer(marker);
-                        }
-                    });
+                    speedData.forEach(row => addSpeedMarker(row));
                     embeddedMap.addLayer(speedCluster);
                     loaded++;
                     if (loaded >= 2) finishMapLoad();
@@ -3366,17 +3751,7 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 header: true,
                 complete: function (results) {
                     stopYieldData = results.data.filter(r => r.lat && r.lon);
-                    stopYieldData.forEach(row => {
-                        const lat = parseFloat(row.lat);
-                        const lon = parseFloat(row.lon);
-                        const type = row.name === 'YIELD' ? 'yield' : 'stop';
-                        if (!isNaN(lat) && !isNaN(lon)) {
-                            const marker = L.marker([lat, lon], { icon: createMapMarker(type) });
-                            marker.bindPopup(createMapPopup(row, type));
-                            marker.data = row;
-                            stopYieldCluster.addLayer(marker);
-                        }
-                    });
+                    stopYieldData.forEach(row => addStopYieldMarker(row));
                     embeddedMap.addLayer(stopYieldCluster);
                     loaded++;
                     if (loaded >= 2) finishMapLoad();
@@ -3456,6 +3831,15 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 window.vdotBikePedLayer.addTo(embeddedMap);
             } else {
                 embeddedMap.removeLayer(window.vdotBikePedLayer);
+            }
+        });
+
+        document.getElementById('tigerwebToggle').addEventListener('change', function () {
+            if (!tigerwebLayer) return;
+            if (this.checked) {
+                tigerwebLayer.addTo(embeddedMap);
+            } else {
+                embeddedMap.removeLayer(tigerwebLayer);
             }
         });
 
