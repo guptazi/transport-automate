@@ -3669,26 +3669,38 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
         }
 
         function addSpeedMarker(row) {
-            const lat = parseFloat(row.lat);
-            const lon = parseFloat(row.lon);
-            const speed = parseInt(row.speed) || 25;
-            if (!isNaN(lat) && !isNaN(lon)) {
-                const marker = L.marker([lat, lon], { icon: createMapMarker('speed', speed) });
-                marker.bindPopup(createMapPopup(row, 'speed'));
-                marker.data = row;
-                speedCluster.addLayer(marker);
+            try {
+                const lat = parseFloat(row.lat);
+                const lon = parseFloat(row.lon);
+                const speed = parseInt(row.speed) || 25;
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    const marker = L.marker([lat, lon], { icon: createMapMarker('speed', speed) });
+                    marker.bindPopup(createMapPopup(row, 'speed'));
+                    marker.data = row;
+                    speedCluster.addLayer(marker);
+                } else {
+                    console.warn('Invalid coordinates for speed marker:', row);
+                }
+            } catch (e) {
+                console.error('Error adding speed marker:', e, row);
             }
         }
 
         function addStopYieldMarker(row) {
-            const lat = parseFloat(row.lat);
-            const lon = parseFloat(row.lon);
-            const type = row.name === 'YIELD' ? 'yield' : 'stop';
-            if (!isNaN(lat) && !isNaN(lon)) {
-                const marker = L.marker([lat, lon], { icon: createMapMarker(type) });
-                marker.bindPopup(createMapPopup(row, type));
-                marker.data = row;
-                stopYieldCluster.addLayer(marker);
+            try {
+                const lat = parseFloat(row.lat);
+                const lon = parseFloat(row.lon);
+                const type = row.name === 'YIELD' ? 'yield' : 'stop';
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    const marker = L.marker([lat, lon], { icon: createMapMarker(type) });
+                    marker.bindPopup(createMapPopup(row, type));
+                    marker.data = row;
+                    stopYieldCluster.addLayer(marker);
+                } else {
+                    console.warn('Invalid coordinates for stop/yield marker:', row);
+                }
+            } catch (e) {
+                console.error('Error adding stop/yield marker:', e, row);
             }
         }
 
@@ -3731,15 +3743,42 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
         function loadMapData() {
             let loaded = 0;
+            console.log('Starting to load map data from CSVs...');
+
+            const parseOptions = {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                trimHeaders: true,
+                delimiter: ",",
+                error: function (err, file) {
+                    console.error(`Error parsing ${file}:`, err);
+                    loaded++;
+                    if (loaded >= 2) finishMapLoad();
+                }
+            };
 
             // Load Speed Limits
             Papa.parse('data/Speed limit.csv', {
-                download: true,
-                header: true,
+                ...parseOptions,
                 complete: function (results) {
+                    console.log(`Speed limit CSV loaded. Rows: ${results.data.length}`);
+                    if (results.data.length > 0) {
+                        console.log('Speed limit first row sample:', results.data[0]);
+                        console.log('Available headers:', Object.keys(results.data[0]));
+                    }
+                    if (results.errors && results.errors.length > 0) {
+                        console.warn('Speed limit parse errors:', results.errors);
+                    }
                     speedData = results.data.filter(r => r.lat && r.lon);
+                    console.log(`Filtered speed markers: ${speedData.length}`);
+
                     speedData.forEach(row => addSpeedMarker(row));
-                    embeddedMap.addLayer(speedCluster);
+
+                    if (document.getElementById('speedLayerToggle').checked) {
+                        embeddedMap.addLayer(speedCluster);
+                    }
+
                     loaded++;
                     if (loaded >= 2) finishMapLoad();
                 }
@@ -3747,12 +3786,25 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
             // Load Stop and Yield
             Papa.parse('data/Stop and Yield.csv', {
-                download: true,
-                header: true,
+                ...parseOptions,
                 complete: function (results) {
+                    console.log(`Stop and Yield CSV loaded. Rows: ${results.data.length}`);
+                    if (results.data.length > 0) {
+                        console.log('Stop and Yield first row sample:', results.data[0]);
+                        console.log('Available headers:', Object.keys(results.data[0]));
+                    }
+                    if (results.errors && results.errors.length > 0) {
+                        console.warn('Stop and Yield parse errors:', results.errors);
+                    }
                     stopYieldData = results.data.filter(r => r.lat && r.lon);
+                    console.log(`Filtered stop/yield markers: ${stopYieldData.length}`);
+
                     stopYieldData.forEach(row => addStopYieldMarker(row));
-                    embeddedMap.addLayer(stopYieldCluster);
+
+                    if (document.getElementById('stopYieldLayerToggle').checked) {
+                        embeddedMap.addLayer(stopYieldCluster);
+                    }
+
                     loaded++;
                     if (loaded >= 2) finishMapLoad();
                 }
@@ -3761,12 +3813,29 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
         function finishMapLoad() {
             const total = speedData.length + stopYieldData.length;
+            console.log(`Finishing map load. Total signs: ${total}`);
             document.getElementById('mapSignCount').textContent = `${total} signs loaded`;
 
             // Fit bounds
-            const bounds = speedCluster.getBounds().extend(stopYieldCluster.getBounds());
-            if (bounds.isValid()) {
-                embeddedMap.fitBounds(bounds, { padding: [30, 30] });
+            try {
+                const speedBounds = speedCluster.getBounds();
+                const stopBounds = stopYieldCluster.getBounds();
+
+                let combinedBounds = null;
+                if (speedBounds.isValid()) combinedBounds = speedBounds;
+                if (stopBounds.isValid()) {
+                    if (combinedBounds) combinedBounds.extend(stopBounds);
+                    else combinedBounds = stopBounds;
+                }
+
+                if (combinedBounds && combinedBounds.isValid()) {
+                    console.log('Fitting map to combined bounds:', combinedBounds);
+                    embeddedMap.fitBounds(combinedBounds, { padding: [30, 30] });
+                } else {
+                    console.warn('No valid bounds found for markers.');
+                }
+            } catch (e) {
+                console.error('Error fitting bounds:', e);
             }
         }
 
