@@ -1,0 +1,1074 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speed Limit Setting Tool - Complete</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --primary: #1a5f7a;
+      --primary-dark: #134a5e;
+      --secondary: #57837b;
+      --accent: #4aa3ff;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #e5e5e5;
+      --gray-600: #525252;
+      --success: #24c17a;
+      --warning: #ffb020;
+      --danger: #ff5a6e;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 25px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .header h1 {
+      color: var(--primary);
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: var(--gray-600);
+      font-size: 1.1rem;
+    }
+
+    .badge-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    /* Map Card Styles */
+    .map-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 0;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+
+    .map-header {
+      padding: 20px 30px;
+      background: linear-gradient(135deg, #1a5f7a 0%, #134a5e 100%);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .map-title {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+
+    .map-info {
+      padding: 15px 20px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.85rem;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    @media (max-width: 1100px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+      animation: fadeInUp 0.6s ease-out;
+      transition: all 0.4s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid transparent;
+      border-image: linear-gradient(90deg, var(--primary), var(--accent)) 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: var(--gray-50);
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(26, 95, 122, 0.15);
+      background: var(--white);
+      transform: scale(1.01);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 768px) {
+
+      .form-row,
+      .form-row-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--gray-200), var(--gray-100));
+      color: var(--gray-600);
+    }
+
+    .alert {
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.95rem;
+    }
+
+    .alert-info {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e40af;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .result {
+      background: var(--gray-50);
+      border: 2px dashed var(--gray-200);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .kpi {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .kpi .card-small {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px 16px;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .kpi .small {
+      font-size: 0.85rem;
+      color: var(--gray-600);
+      margin-bottom: 4px;
+    }
+
+    .kpi .val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .mono {
+      font-family: ui-monospace, 'Courier New', monospace;
+    }
+
+    .muted {
+      color: var(--gray-600);
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🚗 Speed Limit Setting Tool</h1>
+      <p>Enhanced Decision Support System with Interactive Map</p>
+      <div class="badge-container">
+        <span class="badge">MUTCD 11th Edition Compliant</span>
+        <span class="badge">Safe System Approach</span>
+        <span class="badge">Interactive Mapping</span>
+      </div>
+    </header>
+
+    <!-- Interactive Map Section -->
+    <div class="map-card full-width">
+      <div class="map-header">
+        <div>
+          <h2 class="map-title">🗺️ Interactive Traffic Sign Map</h2>
+          <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">Speed Limits & Stop/Yield Signs - Virginia</p>
+        </div>
+        <a href="index (2).html" target="_blank" class="btn"
+          style="background: rgba(255,255,255,0.95); color: #1a5f7a;">
+          Open Full Map View
+        </a>
+      </div>
+      <div id="map"></div>
+      <div class="map-info">
+        📍 Click on the map to view traffic signs and speed limits. Use the "Open Full Map View" button for advanced
+        features including drawing tools, VDOT data layers, and detailed analysis.
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left Column - Input Section -->
+      <div>
+        <!-- Project Information Card -->
+        <div class="card">
+          <h2 class="card-title">
+            📋 Project Information
+          </h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="roadwayName">Roadway Name *</label>
+              <input type="text" id="roadwayName" placeholder="Enter roadway name">
+            </div>
+            <div class="form-group">
+              <label for="studyDate">Study Date *</label>
+              <input type="date" id="studyDate">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fromLocation">From Location</label>
+              <input type="text" id="fromLocation" placeholder="Starting point">
+            </div>
+            <div class="form-group">
+              <label for="toLocation">To Location</label>
+              <input type="text" id="toLocation" placeholder="Ending point">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="functional_class">Functional Classification *</label>
+              <select id="functional_class">
+                <option value="">Select Classification</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="area_type">Area Type *</label>
+              <select id="area_type">
+                <option value="">Select Area Type</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="context">Context *</label>
+            <select id="context">
+              <option value="">Select Context</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Speed Data Card -->
+        <div class="card" style="margin-top: 25px;">
+          <h2 class="card-title">
+            ⚡ Speed Data
+          </h2>
+
+          <div class="alert alert-info">
+            <span>💡</span>
+            <span>Enter speed data collected from your traffic study equipment. Use the calculator below to compute
+              percentiles from raw data.</span>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label for="speed_85th_mph">85th Percentile Speed (mph) *</label>
+              <input type="number" id="speed_85th_mph" step="0.1" placeholder="e.g., 42.0">
+            </div>
+            <div class="form-group">
+              <label for="meanSpeed">Mean Speed (mph)</label>
+              <input type="number" id="meanSpeed" step="0.1" placeholder="0.0">
+            </div>
+            <div class="form-group">
+              <label for="medianSpeed">Median Speed (mph)</label>
+              <input type="number" id="medianSpeed" step="0.1" placeholder="0.0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="totalVehicles">Total Vehicles Surveyed</label>
+              <input type="number" id="totalVehicles" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="avgDailyTraffic">Average Daily Traffic (ADT)</label>
+              <input type="number" id="avgDailyTraffic" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- 85th Percentile Calculator -->
+        <div class="card" style="margin-top: 25px;">
+          <h2 class="card-title">
+            📊 85th Percentile Calculator
+          </h2>
+
+          <div class="form-group">
+            <label for="speeds">Paste spot speeds (mph), any separators</label>
+            <textarea id="speeds" placeholder="e.g., 31 32 33 35 36 38 40 42 41 39"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="btn btn-secondary" id="btn-calc">Compute Percentiles</button>
+            <button class="btn btn-primary" id="btn-use">Use in Form</button>
+          </div>
+
+          <div class="kpi">
+            <div class="card-small">
+              <div class="small">Count</div>
+              <div class="val" id="k-count">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Mean</div>
+              <div class="val" id="k-mean">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">50th</div>
+              <div class="val" id="k-p50">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">85th</div>
+              <div class="val" id="k-p85">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Pace</div>
+              <div class="val" id="k-pace">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context & Safety Data -->
+        <div class="card" style="margin-top: 25px;">
+          <h2 class="card-title">
+            🚦 Context & Safety Data
+          </h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ped_volume_per_hour">Pedestrians per Hour</label>
+              <input type="number" id="ped_volume_per_hour" step="1" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="access_density_per_mile">Access Density (per mile)</label>
+              <input type="number" id="access_density_per_mile" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="years_of_data">Years of Crash Data</label>
+              <input type="number" id="years_of_data" step="1" placeholder="3">
+            </div>
+            <div class="form-group">
+              <label for="crash_rate_multiple_of_statewide">Crash Rate vs Statewide (×)</label>
+              <input type="number" id="crash_rate_multiple_of_statewide" step="0.01" placeholder="e.g., 1.6">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="on_street_parking">On-Street Parking Present</label>
+              <select id="on_street_parking">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="parking_turnover_per_hour">Parking Turnover (per hour)</label>
+              <input type="number" id="parking_turnover_per_hour" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lane_width_ft">Lane Width (ft)</label>
+              <input type="number" id="lane_width_ft" step="0.1" placeholder="12.0">
+            </div>
+            <div class="form-group">
+              <label for="shoulder_width_ft">Shoulder Width (ft)</label>
+              <input type="number" id="shoulder_width_ft" step="0.1" placeholder="0.0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="design_speed_mph">Design Speed (mph)</label>
+              <input type="number" id="design_speed_mph" step="1" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="transit_stops_per_mile">Transit Stops per Mile</label>
+              <input type="number" id="transit_stops_per_mile" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="divided">Divided Roadway</label>
+              <select id="divided">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="access_control">Access Control</label>
+              <select id="access_control">
+                <option value="none">None</option>
+                <option value="partial_or_full">Partial or Full</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="is_school_zone">School Zone Active</label>
+              <select id="is_school_zone">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="beacon_active">Beacon Active</label>
+              <select id="beacon_active">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="is_work_zone">Work Zone Active</label>
+              <select id="is_work_zone">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ttc_active">TTC Active</label>
+              <select id="ttc_active">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Results & Tools -->
+      <div>
+        <!-- Compute Recommendation -->
+        <div class="card">
+          <h2 class="card-title">
+            🎯 Speed Limit Recommendation
+          </h2>
+
+          <button class="btn btn-primary" id="btn-compute" style="width: 100%; justify-content: center;">
+            Compute Recommendation
+          </button>
+
+          <div class="muted" style="margin-top: 10px; text-align: center;">
+            Minimum speed sample size: <span id="min-sample" class="mono">—</span> (per rules)
+          </div>
+
+          <div id="results" class="result" style="display:none; margin-top: 20px;">
+            <!-- Results will be displayed here -->
+          </div>
+        </div>
+
+        <!-- Crash Rate Calculator -->
+        <div class="card" style="margin-top: 25px;">
+          <h2 class="card-title">
+            💥 Crash Rate Calculator
+          </h2>
+
+          <div class="form-group">
+            <label for="cr_crashes">Total Crashes (lookback period)</label>
+            <input type="number" id="cr_crashes" step="1" placeholder="0">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cr_years">Years of Data</label>
+              <input type="number" id="cr_years" step="1" placeholder="3">
+            </div>
+            <div class="form-group">
+              <label for="cr_statewide">Statewide Rate (per MVMT)</label>
+              <input type="text" id="cr_statewide" placeholder="e.g., 3.2">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="btn btn-secondary" id="btn-crashrate">Compute Rate</button>
+            <button class="btn btn-primary" id="btn-crashrate-use">Use in Form</button>
+          </div>
+
+          <div class="kpi">
+            <div class="card-small">
+              <div class="small">Rate (per MVMT)</div>
+              <div class="val" id="cr_rate">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Multiple vs Statewide (×)</div>
+              <div class="val" id="cr_multiple">—</div>
+            </div>
+          </div>
+
+          <div id="cr_error" style="color: var(--danger); font-size: 0.9rem; margin-top: 10px;"></div>
+        </div>
+
+        <!-- AADT Averaging Helper -->
+        <div class="card" style="margin-top: 25px;">
+          <h2 class="card-title">
+            📈 AADT Averaging Helper
+          </h2>
+
+          <div class="form-group">
+            <label for="aadt_series">Annual AADT Counts (comma/space/newline separated)</label>
+            <textarea id="aadt_series" placeholder="e.g., 12345, 12780, 13010, 12890"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="btn btn-secondary" id="btn-aadt-avg">Compute Average</button>
+            <button class="btn btn-primary" id="btn-aadt-use">Use in Form</button>
+          </div>
+
+          <div class="kpi">
+            <div class="card-small">
+              <div class="small">Years</div>
+              <div class="val" id="aadt_years">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Average AADT</div>
+              <div class="val" id="aadt_avg">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Min</div>
+              <div class="val" id="aadt_min">—</div>
+            </div>
+            <div class="card-small">
+              <div class="small">Max</div>
+              <div class="val" id="aadt_max">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" id="rules-embed">
+{
+  "version": "1.0-draft",
+  "metadata": {
+    "handbook_name": "Speed-Limit-Setting Handbook",
+    "edition": "TBD"
+  },
+  "units": {
+    "rounding_bin_mph": 5
+  },
+  "percentiles": {
+    "min_sample_size": 100
+  },
+  "wizard": {
+    "inputs": {
+      "functional_class": {
+        "type": "enum",
+        "values": ["local", "collector", "arterial", "freeway"]
+      },
+      "area_type": {
+        "type": "enum",
+        "values": ["urban", "rural"]
+      },
+      "context": {
+        "type": "enum",
+        "values": ["urban_main_street", "downtown", "residential_mixed", "suburban_commercial", "rural_two_lane"]
+      }
+    }
+  }
+}
+  </script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([37.54, -77.43], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add a sample marker
+    const sampleMarker = L.marker([37.54, -77.43]).addTo(map)
+      .bindPopup('<b>Richmond, VA</b><br>Click anywhere on the map to fetch road data')
+      .openPopup();
+
+    // VDOT API Endpoints
+    const VDOT_SERVICES = {
+      SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
+      TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0'
+    };
+
+    let clickMarker = null;
+
+    // Map click handler
+    map.on('click', async function (e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (clickMarker) map.removeLayer(clickMarker);
+
+      clickMarker = L.marker([lat, lng]).addTo(map);
+      clickMarker.bindPopup('<b>⏳ Fetching...</b>').openPopup();
+
+      try {
+        const buffer = 50;
+        const point = `${lng},${lat}`;
+        let popupContent = '<b>📍 Data Retrieved</b><br><br>';
+        let dataFound = false;
+
+        // Fetch speed limit data
+        try {
+          const speedUrl = `${VDOT_SERVICES.SPEED_LIMITS}/query?geometry=${point}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=${buffer}&units=esriSRUnit_Meter&outFields=*&returnGeometry=false&f=json`;
+          const speedData = await (await fetch(speedUrl)).json();
+
+          if (speedData.features && speedData.features.length > 0) {
+            const f = speedData.features[0].attributes;
+            dataFound = true;
+
+            const roadName = f.RTE_NM || f.ROUTE_NAME || f.STREET_NAME || f.ROAD_NAME;
+            if (roadName) {
+              document.getElementById('roadwayName').value = roadName;
+              popupContent += `🛣️ ${roadName}<br>`;
+            }
+
+            const speedLimit = f.SPEED_LIMIT || f.POSTED_SPEED_LIMIT_1 || f.SPD_LMT;
+            if (speedLimit) {
+              document.getElementById('speed_85th_mph').value = speedLimit;
+              popupContent += `🚦 ${speedLimit} mph<br>`;
+            }
+
+            const funcClass = f.FUNCTIONAL_CLASS || f.FUNC_CLASS || f.FC_DESC;
+            if (funcClass) {
+              const map = { 'Interstate': 'freeway', 'Freeway': 'freeway', 'Arterial': 'arterial', 'Collector': 'collector', 'Local': 'local' };
+              for (const [k, v] of Object.entries(map)) {
+                if (funcClass.toString().includes(k)) {
+                  document.getElementById('functional_class').value = v;
+                  break;
+                }
+              }
+              popupContent += `📊 ${funcClass}<br>`;
+            }
+          }
+        } catch (err) { console.log('Speed error:', err); }
+
+        // Fetch traffic data
+        try {
+          const trafficUrl = `${VDOT_SERVICES.TRAFFIC_VOLUME}/query?geometry=${point}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=${buffer}&units=esriSRUnit_Meter&outFields=*&returnGeometry=false&f=json`;
+          const trafficData = await (await fetch(trafficUrl)).json();
+
+          if (trafficData.features && trafficData.features.length > 0) {
+            const f = trafficData.features[0].attributes;
+            dataFound = true;
+
+            const aadt = f.AADT || f.AADT_2024 || f.TRAFFIC_VOLUME || f.ADT;
+            if (aadt) {
+              document.getElementById('avgDailyTraffic').value = aadt;
+              popupContent += `🚗 AADT: ${parseInt(aadt).toLocaleString()}<br>`;
+            }
+          }
+        } catch (err) { console.log('Traffic error:', err); }
+
+        // Geocode
+        try {
+          const geocodeUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+          const geocodeData = await (await fetch(geocodeUrl)).json();
+
+          if (geocodeData && geocodeData.address) {
+            const addr = geocodeData.address;
+
+            if (addr.city || addr.town) {
+              document.getElementById('area_type').value = 'urban';
+              popupContent += `🏙️ Urban<br>`;
+            } else if (addr.village || addr.hamlet || addr.county) {
+              document.getElementById('area_type').value = 'rural';
+              popupContent += `🌾 Rural<br>`;
+            }
+
+            if (!document.getElementById('fromLocation').value) {
+              const loc = addr.city || addr.town || addr.county || addr.state;
+              if (loc) document.getElementById('fromLocation').value = loc;
+            }
+
+            if (!document.getElementById('roadwayName').value && addr.road) {
+              document.getElementById('roadwayName').value = addr.road;
+              popupContent += `🛣️ ${addr.road}<br>`;
+            }
+          }
+        } catch (err) { console.log('Geocode error:', err); }
+
+        if (!dataFound) {
+          popupContent += '<br><i>ℹ️ No VDOT data found.</i><br>Location data from OSM.';
+        } else {
+          popupContent += '<br>✅ <b>Form populated!</b>';
+        }
+
+        clickMarker.setPopupContent(popupContent).openPopup();
+        document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (error) {
+        console.error('Error:', error);
+        clickMarker.setPopupContent(`<b>❌ Error</b><br>${error.message}`).openPopup();
+      }
+    });
+
+    // Load rules
+    const rules = JSON.parse(document.getElementById('rules-embed').textContent);
+
+    // Populate dropdowns
+    function populateDropdowns() {
+      const funcClass = document.getElementById('functional_class');
+      rules.wizard.inputs.functional_class.values.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+        funcClass.appendChild(opt);
+      });
+
+      const areaType = document.getElementById('area_type');
+      rules.wizard.inputs.area_type.values.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+        areaType.appendChild(opt);
+      });
+
+      const context = document.getElementById('context');
+      rules.wizard.inputs.context.values.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        context.appendChild(opt);
+      });
+
+      document.getElementById('min-sample').textContent = rules.percentiles.min_sample_size;
+    }
+
+    // 85th Percentile Calculator
+    document.getElementById('btn-calc').addEventListener('click', function () {
+      const input = document.getElementById('speeds').value;
+      const speeds = input.split(/[\s,]+/).map(Number).filter(x => !isNaN(x) && x > 0).sort((a, b) => a - b);
+
+      if (speeds.length === 0) {
+        alert('Please enter valid speed data');
+        return;
+      }
+
+      const count = speeds.length;
+      const mean = (speeds.reduce((a, b) => a + b, 0) / count).toFixed(1);
+      const p50 = speeds[Math.floor(count * 0.5)];
+      const p85 = speeds[Math.ceil(count * 0.85) - 1];
+
+      // Calculate 10 mph pace
+      let maxCount = 0, paceStart = 0;
+      for (let i = 0; i < speeds.length; i++) {
+        const upper = speeds[i] + 10;
+        const paceCount = speeds.filter(s => s >= speeds[i] && s <= upper).length;
+        if (paceCount > maxCount) {
+          maxCount = paceCount;
+          paceStart = speeds[i];
+        }
+      }
+      const pace = `${paceStart}-${paceStart + 10}`;
+
+      document.getElementById('k-count').textContent = count;
+      document.getElementById('k-mean').textContent = mean;
+      document.getElementById('k-p50').textContent = p50;
+      document.getElementById('k-p85').textContent = p85;
+      document.getElementById('k-pace').textContent = pace;
+    });
+
+    document.getElementById('btn-use').addEventListener('click', function () {
+      const p85 = document.getElementById('k-p85').textContent;
+      const mean = document.getElementById('k-mean').textContent;
+      const median = document.getElementById('k-p50').textContent;
+      const count = document.getElementById('k-count').textContent;
+
+      if (p85 !== '—') {
+        document.getElementById('speed_85th_mph').value = p85;
+        document.getElementById('meanSpeed').value = mean;
+        document.getElementById('medianSpeed').value = median;
+        document.getElementById('totalVehicles').value = count;
+      }
+    });
+
+    // Crash Rate Calculator
+    document.getElementById('btn-crashrate').addEventListener('click', function () {
+      const crashes = parseFloat(document.getElementById('cr_crashes').value) || 0;
+      const years = parseFloat(document.getElementById('cr_years').value) || 0;
+      const aadt = parseFloat(document.getElementById('avgDailyTraffic').value) || 0;
+      const statewide = parseFloat(document.getElementById('cr_statewide').value) || 0;
+      const miles = 1; // Default to 1 mile
+
+      document.getElementById('cr_error').textContent = '';
+
+      if (crashes === 0 || years === 0 || aadt === 0) {
+        document.getElementById('cr_error').textContent = 'Please enter crashes, years, and AADT';
+        return;
+      }
+
+      const rate = (crashes / (aadt * 365 * miles * years) * 1000000).toFixed(2);
+      const multiple = statewide > 0 ? (rate / statewide).toFixed(2) : '—';
+
+      document.getElementById('cr_rate').textContent = rate;
+      document.getElementById('cr_multiple').textContent = multiple;
+    });
+
+    document.getElementById('btn-crashrate-use').addEventListener('click', function () {
+      const multiple = document.getElementById('cr_multiple').textContent;
+      const years = document.getElementById('cr_years').value;
+
+      if (multiple !== '—') {
+        document.getElementById('crash_rate_multiple_of_statewide').value = multiple;
+        document.getElementById('years_of_data').value = years;
+      }
+    });
+
+    // AADT Averaging
+    document.getElementById('btn-aadt-avg').addEventListener('click', function () {
+      const input = document.getElementById('aadt_series').value;
+      const aadts = input.split(/[\s,\n]+/).map(Number).filter(x => !isNaN(x) && x > 0);
+
+      if (aadts.length === 0) {
+        alert('Please enter valid AADT data');
+        return;
+      }
+
+      const avg = Math.round(aadts.reduce((a, b) => a + b, 0) / aadts.length);
+      const min = Math.min(...aadts);
+      const max = Math.max(...aadts);
+
+      document.getElementById('aadt_years').textContent = aadts.length;
+      document.getElementById('aadt_avg').textContent = avg.toLocaleString();
+      document.getElementById('aadt_min').textContent = min.toLocaleString();
+      document.getElementById('aadt_max').textContent = max.toLocaleString();
+    });
+
+    document.getElementById('btn-aadt-use').addEventListener('click', function () {
+      const avg = document.getElementById('aadt_avg').textContent.replace(/,/g, '');
+      const years = document.getElementById('aadt_years').textContent;
+
+      if (avg !== '—') {
+        document.getElementById('avgDailyTraffic').value = avg;
+        if (document.getElementById('cr_years').value === '') {
+          document.getElementById('cr_years').value = years;
+        }
+      }
+    });
+
+    // Compute Recommendation
+    document.getElementById('btn-compute').addEventListener('click', function () {
+      const p85 = parseFloat(document.getElementById('speed_85th_mph').value);
+
+      if (!p85 || p85 <= 0) {
+        alert('Please enter 85th percentile speed');
+        return;
+      }
+
+      // Simple calculation: round to nearest 5
+      let recommended = Math.round(p85 / 5) * 5;
+
+      // Apply basic adjustments
+      const crashMultiple = parseFloat(document.getElementById('crash_rate_multiple_of_statewide').value) || 0;
+      const pedVolume = parseFloat(document.getElementById('ped_volume_per_hour').value) || 0;
+
+      if (crashMultiple >= 1.5) recommended -= 5;
+      if (pedVolume >= 100) recommended -= 5;
+
+      // Ensure minimum
+      recommended = Math.max(15, recommended);
+
+      const results = document.getElementById('results');
+      results.style.display = 'block';
+      results.innerHTML = `
+        <h3 style="color: var(--primary); margin-bottom: 10px;">Recommended Speed Limit</h3>
+        <div style="font-size: 3rem; font-weight: bold; color: var(--primary); text-align: center; margin: 20px 0;">
+          ${recommended} <span style="font-size: 1.5rem;">mph</span>
+        </div>
+        <div style="background: var(--gray-100); padding: 15px; border-radius: 8px; margin-top: 15px;">
+          <strong>Calculation Summary:</strong><br>
+          • Base (85th percentile): ${p85} mph<br>
+          • Rounded to nearest 5: ${Math.round(p85 / 5) * 5} mph<br>
+          ${crashMultiple >= 1.5 ? '• Crash rate adjustment: -5 mph<br>' : ''}
+          ${pedVolume >= 100 ? '• High pedestrian volume: -5 mph<br>' : ''}
+          • Final recommendation: ${recommended} mph
+        </div>
+      `;
+    });
+
+    // Initialize
+    populateDropdowns();
+
+    // Set today's date as default
+    document.getElementById('studyDate').valueAsDate = new Date();
+  </script>
+</body>
+
+</html>
