@@ -1803,6 +1803,147 @@
                             placeholder="Describe any crash patterns observed..."></textarea>
                     </div>
                 </div>
+
+                <!-- Enhanced Crash Severity Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #ef4444, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#ef4444">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Enhanced Crash Severity Analysis
+                    </h2>
+
+                    <div class="alert" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border-left: 4px solid #ef4444;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#ef4444">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span><strong>MUTCD Requirement:</strong> Speed limit decisions must consider crash severity patterns. High severity crashes may warrant -5 mph adjustment.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: linear-gradient(135deg, #fee2e2, #fecaca); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fca5a5;">
+                            <div style="font-size: 0.75rem; color: #991b1b; font-weight: 600; margin-bottom: 5px;">FATAL</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7f1d1d;" id="crashFatal">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fed7aa, #fdba74); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fb923c;">
+                            <div style="font-size: 0.75rem; color: #9a3412; font-weight: 600; margin-bottom: 5px;">SEVERE INJURY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7c2d12;" id="crashSevere">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fcd34d;">
+                            <div style="font-size: 0.75rem; color: #92400e; font-weight: 600; margin-bottom: 5px;">MINOR INJURY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #78350f;" id="crashMinor">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #93c5fd;">
+                            <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600; margin-bottom: 5px;">PDO ONLY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #1e3a8a;" id="crashPDO">—</div>
+                        </div>
+                    </div>
+
+                    <div id="crashSeverityAlert" style="display: none; padding: 15px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1)); border-radius: 12px; border-left: 5px solid #ef4444; margin-top: 15px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <div style="font-weight: 700; color: #991b1b; font-size: 1.05rem;">High Severity Crash History Detected</div>
+                                <div style="color: #7f1d1d; font-size: 0.9rem; margin-top: 4px;" id="crashSeverityMessage">Automatic -5 mph speed adjustment recommended due to crash severity pattern.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bidirectional Traffic Volume Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#3b82f6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        Bidirectional Traffic Volume Analysis
+                    </h2>
+
+                    <div class="alert" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)); border-left: 4px solid #3b82f6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#3b82f6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Directional traffic patterns can inform time-of-day speed limit recommendations and variable speed limit analysis.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; border: 2px solid #60a5fa;">
+                            <div style="font-size: 0.8rem; color: #1e40af; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                </svg>
+                                NORTHBOUND / EASTBOUND
+                            </div>
+                            <div style="font-size: 2.2rem; font-weight: 700; color: #1e3a8a;" id="trafficDirection1">—</div>
+                            <div style="font-size: 0.75rem; color: #1e40af; margin-top: 5px;">vpd</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fce7f3, #fbcfe8); padding: 18px; border-radius: 12px; border: 2px solid #f9a8d4;">
+                            <div style="font-size: 0.8rem; color: #9f1239; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                                SOUTHBOUND / WESTBOUND
+                            </div>
+                            <div style="font-size: 2.2rem; font-weight: 700; color: #831843;" id="trafficDirection2">—</div>
+                            <div style="font-size: 0.75rem; color: #9f1239; margin-top: 5px;">vpd</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px; padding: 15px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 10px; border: 1px solid #bae6fd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #0c4a6e;">Directional Split:</span>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #0369a1;" id="directionalSplit">—</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #0c4a6e;">Balance Assessment:</span>
+                            <span style="font-size: 0.95rem; font-weight: 600; color: #0369a1;" id="balanceAssessment">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Intersection Density Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#8b5cf6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Intersection Density Analysis
+                    </h2>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 18px;">
+                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fcd34d;">
+                            <div style="font-size: 0.75rem; color: #92400e; font-weight: 600; margin-bottom: 5px;">SIGNALIZED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #78350f;" id="intersectionSignalized">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fed7aa, #fdba74); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fb923c;">
+                            <div style="font-size: 0.75rem; color: #9a3412; font-weight: 600; margin-bottom: 5px;">STOP CONTROLLED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7c2d12;" id="intersectionStop">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #93c5fd;">
+                            <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600; margin-bottom: 5px;">UNSIGNALIZED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #1e3a8a;" id="intersectionUnsignalized">—</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 15px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05)); border-radius: 10px; border-left: 4px solid #8b5cf6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #5b21b6;">Intersection Density:</span>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: #6d28d9;" id="intersectionDensity">— per mile</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #5b21b6;">NACTO Assessment:</span>
+                            <span style="font-size: 1rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: rgba(139, 92, 246, 0.2); color: #5b21b6;" id="intersectionNACTO">—</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column - Analysis Section -->
@@ -2064,6 +2205,34 @@
                     </svg>
                     NACTO Risk Matrix & Recommended Speed Limit
                 </h2>
+
+                <!-- MUTCD 11th Edition Warning System -->
+                <div id="mutcdWarning" style="display: none; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1)); border-radius: 14px; border: 3px solid #f59e0b; animation: glow 2s ease-in-out infinite;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2.5" style="flex-shrink: 0;">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; color: #92400e; font-size: 1.25rem; margin-bottom: 10px;">
+                                ⚠️ MUTCD 11TH EDITION NOTICE
+                            </div>
+                            <div style="color: #78350f; font-size: 1rem; line-height: 1.6; margin-bottom: 12px;" id="mutcdWarningText">
+                                This roadway is classified as an <strong>Urban/Suburban Arterial</strong>. Per MUTCD Section 2B.13 (Effective January 18, 2024),
+                                the <strong>85th percentile speed should NOT be used as the primary factor</strong> for setting speed limits without considering other factors
+                                like land use, pedestrian activity, crash history, and roadway context.
+                            </div>
+                            <div style="padding: 12px 16px; background: rgba(255, 255, 255, 0.8); border-radius: 8px; border-left: 4px solid #d97706;">
+                                <div style="font-weight: 700; color: #92400e; margin-bottom: 6px;">RECOMMENDED METHODOLOGY:</div>
+                                <div style="color: #78350f; font-size: 0.95rem;">
+                                    ✓ Use NACTO Safe Speed Study methodology (context-sensitive analysis)<br>
+                                    ✓ Consider conflict density and activity level<br>
+                                    ✓ 85th percentile should be supplemental only, not primary
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="risk-matrix">
                     <div class="risk-matrix-cell"></div>
@@ -3553,9 +3722,12 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
         const VDOT_SERVICES = {
             SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
             TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0',
+            BIDIRECTIONAL_TRAFFIC: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Bidirectional_Traffic_Volume/FeatureServer/0',
             CRASHES: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer/0',
             SIDEWALKS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Sidewalk_Inventory/FeatureServer/0',
-            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0'
+            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0',
+            INTERSECTIONS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/LRS_Road_Intersections/FeatureServer/0',
+            ROUTE_MASTER: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/LRS_Route_Master/FeatureServer/0'
         };
 
         let vaBoundaryLayer;
@@ -3954,15 +4126,143 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                     }
                 } catch (e) { console.warn('Bike/Ped query failed', e); }
 
-                // 4. Query Crashes (Count nearby)
+                // 4. Query Crashes (Count nearby) - ENHANCED with Severity Analysis
                 try {
                     const crashCollection = await queryEsriService(VDOT_SERVICES.CRASHES, latlng, 200, true);
-                    if (crashCollection) {
+                    if (crashCollection && crashCollection.features) {
                         updateField('crashCount', crashCollection.features.length, 'VDOT');
+
+                        // Enhanced Crash Severity Analysis
+                        let fatalCount = 0, severeCount = 0, minorCount = 0, pdoCount = 0;
+                        crashCollection.features.forEach(feature => {
+                            const severity = feature.properties.CRASH_SEVERITY || feature.properties.Severity || '';
+                            const severityLower = severity.toLowerCase();
+
+                            if (severityLower.includes('fatal') || severityLower.includes('k')) fatalCount++;
+                            else if (severityLower.includes('severe') || severityLower.includes('injury') || severityLower.includes('a')) severeCount++;
+                            else if (severityLower.includes('minor') || severityLower.includes('b') || severityLower.includes('c')) minorCount++;
+                            else pdoCount++;
+                        });
+
+                        // Update severity displays
+                        document.getElementById('crashFatal').textContent = fatalCount;
+                        document.getElementById('crashSevere').textContent = severeCount;
+                        document.getElementById('crashMinor').textContent = minorCount;
+                        document.getElementById('crashPDO').textContent = pdoCount;
+
+                        // Show alert if high severity crashes detected
+                        if (fatalCount > 0 || severeCount > 2) {
+                            const alertDiv = document.getElementById('crashSeverityAlert');
+                            const messageDiv = document.getElementById('crashSeverityMessage');
+                            alertDiv.style.display = 'block';
+
+                            if (fatalCount > 0) {
+                                messageDiv.textContent = `${fatalCount} fatal crash(es) detected in last 3-5 years. Automatic -5 mph speed adjustment strongly recommended per MUTCD safety requirements.`;
+                            } else {
+                                messageDiv.textContent = `${severeCount} severe injury crashes detected. Consider -5 mph speed adjustment to reduce crash severity risk.`;
+                            }
+                        }
                     }
                 } catch (e) { console.warn('Crash query failed', e); }
 
-                // 5. Check Sidewalks for Checkboxes
+                // 5. Query Bidirectional Traffic Volume - NEW FEATURE
+                try {
+                    const biDirResult = await queryEsriService(VDOT_SERVICES.BIDIRECTIONAL_TRAFFIC, latlng, 150);
+                    if (biDirResult) {
+                        const dir1 = biDirResult.AADT_NB || biDirResult.AADT_EB || biDirResult.AADT_1 || 0;
+                        const dir2 = biDirResult.AADT_SB || biDirResult.AADT_WB || biDirResult.AADT_2 || 0;
+                        const total = dir1 + dir2;
+
+                        if (total > 0) {
+                            document.getElementById('trafficDirection1').textContent = dir1.toLocaleString();
+                            document.getElementById('trafficDirection2').textContent = dir2.toLocaleString();
+
+                            const split1 = ((dir1 / total) * 100).toFixed(0);
+                            const split2 = ((dir2 / total) * 100).toFixed(0);
+                            document.getElementById('directionalSplit').textContent = `${split1}% / ${split2}%`;
+
+                            // Assess balance
+                            const imbalance = Math.abs(dir1 - dir2) / total;
+                            let assessment = '';
+                            if (imbalance < 0.15) assessment = 'Balanced ✓';
+                            else if (imbalance < 0.30) assessment = 'Moderate Imbalance';
+                            else assessment = 'High Imbalance ⚠️';
+                            document.getElementById('balanceAssessment').textContent = assessment;
+                        }
+                    }
+                } catch (e) { console.warn('Bidirectional traffic query failed', e); }
+
+                // 6. Query Intersections - NEW FEATURE
+                try {
+                    const corridorLength = parseFloat(document.getElementById('corridorLength').value) || 0.5;
+                    const bufferMeters = (corridorLength * 1609.34) / 2; // Convert miles to meters, half corridor
+                    const intersectionCollection = await queryEsriService(VDOT_SERVICES.INTERSECTIONS, latlng, bufferMeters, true);
+
+                    if (intersectionCollection && intersectionCollection.features) {
+                        let signalized = 0, stopControlled = 0, unsignalized = 0;
+
+                        intersectionCollection.features.forEach(feature => {
+                            const type = (feature.properties.INTERSECTION_TYPE || feature.properties.CONTROL_TYPE || '').toLowerCase();
+
+                            if (type.includes('signal')) signalized++;
+                            else if (type.includes('stop') || type.includes('yield')) stopControlled++;
+                            else unsignalized++;
+                        });
+
+                        document.getElementById('intersectionSignalized').textContent = signalized;
+                        document.getElementById('intersectionStop').textContent = stopControlled;
+                        document.getElementById('intersectionUnsignalized').textContent = unsignalized;
+
+                        const totalIntersections = signalized + stopControlled + unsignalized;
+                        const density = corridorLength > 0 ? (totalIntersections / corridorLength).toFixed(1) : 0;
+                        document.getElementById('intersectionDensity').textContent = `${density} per mile`;
+
+                        // NACTO Assessment based on density
+                        let nactoAssessment = '';
+                        const densityNum = parseFloat(density);
+                        if (densityNum >= 12) nactoAssessment = 'HIGH DENSITY ⚠️';
+                        else if (densityNum >= 6) nactoAssessment = 'MODERATE';
+                        else nactoAssessment = 'LOW ✓';
+                        document.getElementById('intersectionNACTO').textContent = nactoAssessment;
+
+                        // Auto-check crossing density checkboxes
+                        const quarterMileDensity = densityNum / 4;
+                        if (quarterMileDensity >= 3) {
+                            document.getElementById('highCrossingDensity').checked = true;
+                        } else if (quarterMileDensity >= 1) {
+                            document.getElementById('moderateCrossingDensity').checked = true;
+                        } else {
+                            document.getElementById('lowCrossingDensity').checked = true;
+                        }
+                    }
+                } catch (e) { console.warn('Intersection query failed', e); }
+
+                // 7. Query Route Master for Classification - NEW FEATURE
+                try {
+                    const routeResult = await queryEsriService(VDOT_SERVICES.ROUTE_MASTER, latlng, 150);
+                    if (routeResult) {
+                        const functionalClass = routeResult.FUNCTIONAL_CLASS || routeResult.FC_DESC || '';
+                        const areaType = routeResult.AREA_TYPE || routeResult.URBAN_CODE || '';
+
+                        // Check if MUTCD 11th Edition warning should be shown
+                        const classLower = functionalClass.toLowerCase();
+                        const areaLower = areaType.toLowerCase();
+                        const isArterial = classLower.includes('arterial') || classLower.includes('principal');
+                        const isUrbanSuburban = areaLower.includes('urban') || areaLower.includes('suburb') || areaType !== '';
+
+                        if (isArterial && isUrbanSuburban) {
+                            document.getElementById('mutcdWarning').style.display = 'block';
+
+                            // Update warning text with specific classification
+                            const warningText = document.getElementById('mutcdWarningText');
+                            warningText.innerHTML = `This roadway is classified as an <strong>${functionalClass}</strong> in an <strong>${areaType || 'Urban/Suburban'}</strong> context.
+                                Per MUTCD Section 2B.13 (Effective January 18, 2024), the <strong>85th percentile speed should NOT be used as the primary factor</strong>
+                                for setting speed limits without considering other factors like land use, pedestrian activity, crash history, and roadway context.`;
+                        }
+                    }
+                } catch (e) { console.warn('Route master query failed', e); }
+
+                // 8. Check Sidewalks for Checkboxes
                 try {
                     const sidewalkResult = await queryEsriService(VDOT_SERVICES.SIDEWALKS, latlng, 100);
                     const noSidewalksCheck = document.getElementById('noSidewalks');
