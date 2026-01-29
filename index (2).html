@@ -41,11 +41,11 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
-            background-attachment: fixed;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+            color: #1f2937;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
         }
 
         /* Animations */
@@ -193,15 +193,19 @@
         }
 
         .header {
-            background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 25px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            animation: fadeInUp 0.8s ease-out;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(250, 251, 253, 1) 100%);
+            border-radius: 14px;
+            padding: 26px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+            text-align: left;
+            animation: fadeInUp 0.6s ease-out;
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
         }
 
         .header::before {
@@ -217,15 +221,15 @@
 
         .header h1 {
             color: var(--primary);
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            position: relative;
+            font-size: 1.6rem;
+            margin: 0;
+            font-weight: 700;
         }
 
         .header p {
             color: var(--gray-600);
-            font-size: 1.2rem;
+            font-size: 0.95rem;
+            margin: 0;
         }
 
         .badge-container {
@@ -269,18 +273,19 @@
 
         .card {
             background: var(--white);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-            animation: fadeInUp 0.6s ease-out;
-            transition: all 0.4s ease;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+            animation: fadeInUp 0.5s ease-out;
+            transition: all 0.18s ease;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(15, 23, 42, 0.04);
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
         }
 
         .card:nth-child(odd) {
@@ -332,6 +337,7 @@
             font-size: 1rem;
             transition: all 0.3s ease;
             background: var(--gray-50);
+            resize: vertical;
         }
 
         .form-group input:focus,
@@ -370,18 +376,19 @@
         }
 
         .btn {
-            padding: 14px 28px;
+            padding: 10px 16px;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.18s ease;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
         }
 
         .btn::before {
@@ -1006,19 +1013,396 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+
+        /* Layer Sidebar */
+        .layer-sidebar {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            width: 320px;
+            max-height: 72vh;
+            overflow-y: auto;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.12);
+            padding: 12px 14px;
+            z-index: 1400;
+            transform: translateX(-16px) scale(0.99);
+            opacity: 0;
+            transition: all 0.18s ease;
+            display: none;
+        }
+
+        .layer-sidebar.open {
+            display: block;
+            transform: translateX(0) scale(1);
+            opacity: 1;
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.35);
+            z-index: 1300;
+            display: none;
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+        }
+
+        /* Top navbar */
+        .topbar {
+            background: linear-gradient(90deg, #0f172a, #0b1220);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(2, 6, 23, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .topbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar .brand h1 {
+            color: white;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .topbar .top-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Left vertical nav */
+        .left-nav {
+            position: fixed;
+            left: 16px;
+            top: 92px;
+            width: 64px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 253, 0.98));
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(2, 6, 23, 0.06);
+            padding: 8px;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .left-nav .nav-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #0f172a;
+        }
+
+        .left-nav .nav-item:hover {
+            background: rgba(26, 95, 122, 0.08);
+            transform: translateY(-3px);
+        }
+
+        /* Move main container to the right to account for left nav on wide screens */
+        @media (min-width: 1000px) {
+            .container {
+                margin-left: 104px;
+                max-width: calc(100% - 128px);
+            }
+
+            .layer-sidebar {
+                left: 104px;
+            }
+
+            .topbar {
+                border-radius: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .left-nav {
+                display: none;
+            }
+
+            .container {
+                margin: 0;
+                padding: 12px;
+                max-width: 100%;
+            }
+
+            .layer-sidebar {
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                max-height: 80vh;
+                border-radius: 20px 20px 0 0;
+                transform: translateY(100%);
+                padding: 20px;
+                box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            .layer-sidebar.open {
+                transform: translateY(0);
+            }
+
+            .topbar {
+                padding: 12px;
+                border-radius: 0;
+                position: sticky;
+                top: 0;
+                z-index: 1200;
+            }
+
+            .topbar .brand h1 {
+                font-size: 0.9rem;
+            }
+
+            .header {
+                padding: 20px;
+                border-radius: 16px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row,
+            .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+
+        .layer-sidebar .layer-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .layer-sidebar h4 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .layer-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #1a5f7a;
+            font-weight: 600;
+        }
+
+        /* KPI / Stats Grid */
+        .kpi {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .card-small {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-small:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .card-small .small {
+            font-size: 0.7rem;
+            color: var(--gray-600);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .card-small .val {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="topbar" role="banner">
+            <div class="brand">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="6" fill="#1a5f7a" />
+                    <path d="M6 12h12M12 6v12" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.5" />
+                </svg>
+                <div>
+                    <h1>Speed Study — Crash Lens UI</h1>
+                    <div style="font-size:0.78rem; opacity:0.85; color:#cfe7f0;">NACTO City Limits • MUTCD 11th Edition
+                    </div>
+                </div>
+            </div>
+            <div class="top-actions">
+                <button class="layer-toggle-btn" id="toggleLayersBtn">Layers</button>
+                <div class="badge-container" style="display:flex;gap:8px;align-items:center;">
+                    <span class="badge"
+                        style="background:rgba(255,255,255,0.06);color:#dbeafe;border-radius:8px;padding:6px 10px;font-weight:600;">24,415
+                        results</span>
+                </div>
+            </div>
+        </div>
+
+        <aside class="left-nav" aria-hidden="false">
+            <div class="nav-item" title="Map">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10.5V19a1 1 0 0 1-1 1h-2v-8.5" />
+                    <path d="M3 6v12a1 1 0 0 0 1 1h2V6" />
+                    <path d="M8 6v13" />
+                    <path d="M16 5v14" />
+                </svg>
+            </div>
+            <div class="nav-item" title="Search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="6" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+            </div>
+            <div class="nav-item" title="Layers" id="leftLayersBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l9 4.5-9 4.5-9-4.5L12 2z" />
+                    <path d="M12 12l9 4.5-9 4.5-9-4.5L12 12z" />
+                </svg>
+            </div>
+            <div class="nav-item" title="Full Screen">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                    <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                    <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+                    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                </svg>
+            </div>
+        </aside>
+
         <header class="header">
-            <h1>🚗 Speed Study Analysis Tool</h1>
-            <p>NACTO City Limits Methodology for Safe Speed Limit Setting</p>
-            <div class="badge-container">
-                <span class="badge badge-primary">MUTCD 11th Edition Compliant</span>
-                <span class="badge badge-accent">Safe System Approach</span>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <h1>🚗 Speed Study Analysis Tool</h1>
+                <p>NACTO City Limits Methodology for Safe Speed Limit Setting</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="badge-container">
+                    <span class="badge badge-primary">MUTCD 11th Edition Compliant</span>
+                    <span class="badge badge-accent">Safe System Approach</span>
+                </div>
             </div>
         </header>
+
+        <aside id="layerSidebar" class="layer-sidebar" aria-hidden="true">
+            <div class="layer-sidebar-header">
+                <h4>Map Layers</h4>
+                <button id="closeLayerSidebar" class="layer-toggle-btn">Close ✕</button>
+            </div>
+            <div class="layer-list">
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="speedLayerToggle" checked
+                        style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: linear-gradient(135deg, #22c55e, #ef4444); border-radius: 50%;"></span>Speed
+                        Limits</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="stopYieldLayerToggle" checked
+                        style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: linear-gradient(135deg, #dc2626, #eab308); border-radius: 50%;"></span>Stop
+                        & Yield</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="vdotTrafficToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #3b82f6; border-radius: 50%;"></span>VDOT
+                        Traffic</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="vdotCrashToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></span>VDOT
+                        Crashes</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="vdotSidewalkToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #fbbf24; border-radius: 50%;"></span>Sidewalks</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="vdotSpeedToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>VDOT
+                        Speeds</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="vdotBikePedToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%;"></span>Bike/Ped</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                    <input type="checkbox" id="tigerwebToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span style="display: flex; align-items: center; gap: 8px;"><span
+                            style="width: 12px; height: 12px; background: #1e3a8a; border-radius: 50%;"></span>Tigerweb</span>
+                </label>
+            </div>
+        </aside>
+        <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
         <!-- Embedded Interactive Map Section -->
         <div class="card" style="margin-bottom: 25px; padding: 0; overflow: hidden;">
@@ -1035,65 +1419,8 @@
                         <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">Speed Limits & Stop/Yield Signs</p>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="speedLayerToggle" checked
-                            style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: linear-gradient(135deg, #22c55e, #ef4444); border-radius: 50%;"></span>Speed
-                            Limits</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="stopYieldLayerToggle" checked
-                            style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: linear-gradient(135deg, #dc2626, #eab308); border-radius: 50%;"></span>Stop
-                            & Yield</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="vdotTrafficToggle"
-                            style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #3b82f6; border-radius: 50%;"></span>VDOT
-                            Traffic</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="vdotCrashToggle" style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></span>VDOT
-                            Crashes</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="vdotSidewalkToggle"
-                            style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #fbbf24; border-radius: 50%;"></span>Sidewalks</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="vdotSpeedToggle" style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>VDOT
-                            Speeds</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="vdotBikePedToggle"
-                            style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%;"></span>Bike/Ped</span>
-                    </label>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
-                        <input type="checkbox" id="tigerwebToggle" style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="display: flex; align-items: center; gap: 6px;"><span
-                                style="width: 12px; height: 12px; background: #1e3a8a; border-radius: 50%;"></span>Tigerweb</span>
-                    </label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <button id="toggleLayersBtn" class="layer-toggle-btn" type="button">Layers</button>
                     <a href="map.html" target="_blank"
                         style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.95); color: #1a5f7a; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"
@@ -1389,6 +1716,43 @@
                         </div>
                     </div>
 
+                    <!-- 85th Percentile Calculator (from FHWA tool) -->
+                    <div style="margin-top:18px; padding-top:12px; border-top:1px dashed var(--gray-200);">
+                        <label for="speeds"
+                            style="display:block; color:var(--gray-600); font-weight:600; margin-bottom:8px;">Paste spot
+                            speeds (mph), any separators</label>
+                        <textarea id="speeds" placeholder="e.g., 31 32 33 35 36 38 40 42 41 39"
+                            style="width:100%; padding:12px; border:2px solid var(--gray-200); border-radius:8px; background:var(--gray-50);"></textarea>
+
+                        <div style="display:flex; gap:10px; margin-top:12px;">
+                            <button class="btn btn-secondary" id="btn-calc">Compute Percentiles</button>
+                            <button class="btn btn-primary" id="btn-use">Use in Form</button>
+                        </div>
+
+                        <div class="kpi" style="margin-top:12px;">
+                            <div class="card-small">
+                                <div class="small">Count</div>
+                                <div class="val" id="k-count">—</div>
+                            </div>
+                            <div class="card-small">
+                                <div class="small">Mean</div>
+                                <div class="val" id="k-mean">—</div>
+                            </div>
+                            <div class="card-small">
+                                <div class="small">50th</div>
+                                <div class="val" id="k-p50">—</div>
+                            </div>
+                            <div class="card-small">
+                                <div class="small">85th</div>
+                                <div class="val" id="k-p85">—</div>
+                            </div>
+                            <div class="card-small">
+                                <div class="small">Pace</div>
+                                <div class="val" id="k-pace">—</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="exceedingPosted">% Exceeding Posted Speed Limit</label>
@@ -1603,6 +1967,90 @@
                     <div id="activityLevelResult" class="result-box result-moderate">
                         <h3>MODERATE ACTIVITY</h3>
                         <p>Complete the checklist above to see your result</p>
+                    </div>
+                </div>
+
+                <!-- Crash Rate Calculator -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Crash Rate Calculator
+                    </h2>
+
+                    <div class="form-group">
+                        <label for="cr_crashes">Total Crashes (lookback period)</label>
+                        <input type="number" id="cr_crashes" step="1" placeholder="0">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cr_years">Years of Data</label>
+                            <input type="number" id="cr_years" step="1" placeholder="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="cr_statewide">Statewide Rate (per MVMT)</label>
+                            <input type="text" id="cr_statewide" placeholder="e.g., 3.2">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-secondary" id="btn-crashrate">Compute Rate</button>
+                    </div>
+
+                    <div class="kpi">
+                        <div class="card-small">
+                            <div class="small">Rate (per MVMT)</div>
+                            <div class="val" id="cr_rate">—</div>
+                        </div>
+                        <div class="card-small">
+                            <div class="small">Multiple vs Statewide (×)</div>
+                            <div class="val" id="cr_multiple">—</div>
+                        </div>
+                    </div>
+
+                    <div id="cr_error" style="color: var(--danger); font-size: 0.9rem; margin-top: 10px;"></div>
+                </div>
+
+                <!-- AADT Averaging Helper -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg>
+                        AADT Averaging Helper
+                    </h2>
+
+                    <div class="form-group">
+                        <label for="aadt_series">Annual AADT Counts (comma/space/newline separated)</label>
+                        <textarea id="aadt_series" placeholder="e.g., 12345, 12780, 13010, 12890"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-secondary" id="btn-aadt-avg">Compute Average</button>
+                        <button class="btn btn-primary" id="btn-aadt-use">Use in Form</button>
+                    </div>
+
+                    <div class="kpi">
+                        <div class="card-small">
+                            <div class="small">Years</div>
+                            <div class="val" id="aadt_years">—</div>
+                        </div>
+                        <div class="card-small">
+                            <div class="small">Average AADT</div>
+                            <div class="val" id="aadt_avg">—</div>
+                        </div>
+                        <div class="card-small">
+                            <div class="small">Min</div>
+                            <div class="val" id="aadt_min">—</div>
+                        </div>
+                        <div class="card-small">
+                            <div class="small">Max</div>
+                            <div class="val" id="aadt_max">—</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2966,6 +3414,119 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
         updateAnalysis();
     </script>
 
+    <script>
+        // 85th percentile calculator handlers
+        (function () {
+            const btnCalc = document.getElementById('btn-calc');
+            const btnUse = document.getElementById('btn-use');
+
+            function parseSpeeds(input) {
+                const speeds = input.split(/[^0-9\.]+/).map(Number).filter(x => !isNaN(x) && x > 0).sort((a, b) => a - b);
+                return speeds;
+            }
+
+            if (btnCalc) btnCalc.addEventListener('click', function () {
+                const input = document.getElementById('speeds').value || '';
+                const speeds = parseSpeeds(input);
+
+                if (!speeds || speeds.length === 0) {
+                    alert('Please enter valid speed data');
+                    return;
+                }
+
+                const count = speeds.length;
+                const mean = (speeds.reduce((a, b) => a + b, 0) / count).toFixed(1);
+                const p50 = speeds[Math.floor(count * 0.5)];
+                const p85 = speeds[Math.ceil(count * 0.85) - 1];
+
+                // Calculate 10 mph pace
+                let maxCount = 0, paceStart = 0;
+                for (let i = 0; i < speeds.length; i++) {
+                    const upper = speeds[i] + 10;
+                    const paceCount = speeds.filter(s => s >= speeds[i] && s <= upper).length;
+                    if (paceCount > maxCount) {
+                        maxCount = paceCount;
+                        paceStart = speeds[i];
+                    }
+                }
+                const pace = `${paceStart}-${paceStart + 10}`;
+
+                document.getElementById('k-count').textContent = count;
+                document.getElementById('k-mean').textContent = mean;
+                document.getElementById('k-p50').textContent = p50;
+                document.getElementById('k-p85').textContent = p85;
+                document.getElementById('k-pace').textContent = pace;
+            });
+
+            if (btnUse) btnUse.addEventListener('click', function () {
+                const p85 = document.getElementById('k-p85').textContent;
+                const mean = document.getElementById('k-mean').textContent;
+                const median = document.getElementById('k-p50').textContent;
+                const count = document.getElementById('k-count').textContent;
+
+                if (p85 && p85 !== '—') {
+                    const p85El = document.getElementById('p85Speed') || document.getElementById('speed_85th_mph');
+                    if (p85El) p85El.value = p85;
+                    const meanEl = document.getElementById('meanSpeed');
+                    if (meanEl) meanEl.value = mean;
+                    const medianEl = document.getElementById('medianSpeed');
+                    if (medianEl) medianEl.value = median;
+                    const totalEl = document.getElementById('totalVehicles');
+                    if (totalEl) totalEl.value = count;
+                }
+            });
+        })();
+
+    </script>
+
+    <script>
+        // Layer sidebar toggle handlers
+        (function () {
+            const toggleBtn = document.getElementById('toggleLayersBtn');
+            const sidebar = document.getElementById('layerSidebar');
+            const closeBtn = document.getElementById('closeLayerSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+
+            function openSidebar() {
+                sidebar.classList.add('open');
+                sidebar.setAttribute('aria-hidden', 'false');
+                if (backdrop) {
+                    backdrop.classList.add('show');
+                    backdrop.setAttribute('aria-hidden', 'false');
+                }
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                sidebar.setAttribute('aria-hidden', 'true');
+                if (backdrop) {
+                    backdrop.classList.remove('show');
+                    backdrop.setAttribute('aria-hidden', 'true');
+                }
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', () => {
+                if (sidebar.classList.contains('open')) closeSidebar(); else openSidebar();
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+
+            // Close sidebar when clicking outside or clicking backdrop
+            document.addEventListener('click', function (e) {
+                if (!sidebar) return;
+                if (!sidebar.classList.contains('open')) return;
+                const target = e.target;
+                if (backdrop && (target === backdrop || !sidebar.contains(target) && target !== toggleBtn)) {
+                    closeSidebar();
+                }
+            });
+
+            if (backdrop) {
+                backdrop.addEventListener('click', closeSidebar);
+            }
+        })();
+    </script>
+
     <!-- Leaflet Map Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
@@ -3839,77 +4400,91 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
             }
         }
 
-        // Layer toggles
-        document.getElementById('speedLayerToggle').addEventListener('change', function () {
-            if (this.checked) {
-                embeddedMap.addLayer(speedCluster);
-            } else {
-                embeddedMap.removeLayer(speedCluster);
-            }
-            updateSelectionCount();
+        // Layer toggles (guarded)
+        function safeOn(id, handler) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', handler);
+        }
+
+        safeOn('speedLayerToggle', function () {
+            try {
+                if (this.checked) embeddedMap.addLayer(speedCluster);
+                else embeddedMap.removeLayer(speedCluster);
+            } catch (e) { console.warn('Speed layer toggle failed', e); }
+            try { updateSelectionCount(); } catch (e) { }
         });
 
-        document.getElementById('stopYieldLayerToggle').addEventListener('change', function () {
-            if (this.checked) {
-                embeddedMap.addLayer(stopYieldCluster);
-            } else {
-                embeddedMap.removeLayer(stopYieldCluster);
-            }
-            updateSelectionCount();
+        safeOn('stopYieldLayerToggle', function () {
+            try {
+                if (this.checked) embeddedMap.addLayer(stopYieldCluster);
+                else embeddedMap.removeLayer(stopYieldCluster);
+            } catch (e) { console.warn('Stop/Limit layer toggle failed', e); }
+            try { updateSelectionCount(); } catch (e) { }
         });
 
-        document.getElementById('vdotTrafficToggle').addEventListener('change', function () {
-            if (!window.vdotTrafficLayer) return;
-            if (this.checked) {
-                window.vdotTrafficLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(window.vdotTrafficLayer);
-            }
+        safeOn('vdotTrafficToggle', function () {
+            try {
+                if (!window.vdotTrafficLayer) return;
+                if (this.checked) window.vdotTrafficLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(window.vdotTrafficLayer);
+            } catch (e) { console.warn('VDOT traffic toggle failed', e); }
         });
 
-        document.getElementById('vdotCrashToggle').addEventListener('change', function () {
-            if (!window.vdotCrashLayer) return;
-            if (this.checked) {
-                window.vdotCrashLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(window.vdotCrashLayer);
-            }
+        safeOn('vdotCrashToggle', function () {
+            try {
+                if (!window.vdotCrashLayer) return;
+                if (this.checked) window.vdotCrashLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(window.vdotCrashLayer);
+            } catch (e) { console.warn('VDOT crash toggle failed', e); }
         });
 
-        document.getElementById('vdotSidewalkToggle').addEventListener('change', function () {
-            if (!window.vdotSidewalkLayer) return;
-            if (this.checked) {
-                window.vdotSidewalkLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(window.vdotSidewalkLayer);
-            }
+        safeOn('vdotSidewalkToggle', function () {
+            try {
+                if (!window.vdotSidewalkLayer) return;
+                if (this.checked) window.vdotSidewalkLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(window.vdotSidewalkLayer);
+            } catch (e) { console.warn('VDOT sidewalk toggle failed', e); }
         });
 
-        document.getElementById('vdotSpeedToggle').addEventListener('change', function () {
-            if (!window.vdotSpeedLimitLayer) return;
-            if (this.checked) {
-                window.vdotSpeedLimitLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(window.vdotSpeedLimitLayer);
-            }
+        safeOn('vdotSpeedToggle', function () {
+            try {
+                if (!window.vdotSpeedLimitLayer) return;
+                if (this.checked) window.vdotSpeedLimitLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(window.vdotSpeedLimitLayer);
+            } catch (e) { console.warn('VDOT speed toggle failed', e); }
         });
 
-        document.getElementById('vdotBikePedToggle').addEventListener('change', function () {
-            if (!window.vdotBikePedLayer) return;
-            if (this.checked) {
-                window.vdotBikePedLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(window.vdotBikePedLayer);
-            }
+        safeOn('vdotBikePedToggle', function () {
+            try {
+                if (!window.vdotBikePedLayer) return;
+                if (this.checked) window.vdotBikePedLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(window.vdotBikePedLayer);
+            } catch (e) { console.warn('VDOT bike/ped toggle failed', e); }
         });
 
-        document.getElementById('tigerwebToggle').addEventListener('change', function () {
-            if (!tigerwebLayer) return;
-            if (this.checked) {
-                tigerwebLayer.addTo(embeddedMap);
-            } else {
-                embeddedMap.removeLayer(tigerwebLayer);
-            }
+        safeOn('tigerwebToggle', function () {
+            try {
+                if (!tigerwebLayer) return;
+                if (this.checked) tigerwebLayer.addTo(embeddedMap);
+                else embeddedMap.removeLayer(tigerwebLayer);
+            } catch (e) { console.warn('Tigerweb toggle failed', e); }
+        });
+
+        // wire left nav layers button to open sidebar
+        (function () {
+            const leftBtn = document.getElementById('leftLayersBtn');
+            const topBtn = document.getElementById('toggleLayersBtn');
+            if (leftBtn && topBtn) leftBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                topBtn.click();
+            });
+        })();
+
+        // Ensure the embedded map is initialized after all resources
+        window.addEventListener('load', function () {
+            try {
+                if (typeof initEmbeddedMap === 'function') initEmbeddedMap();
+            } catch (e) { console.error('initEmbeddedMap failed', e); }
         });
 
         // Drawing tools
@@ -4008,6 +4583,63 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
 
         // Initialize map when DOM is ready
         document.addEventListener('DOMContentLoaded', initEmbeddedMap);
+
+        // Crash Rate Calculator
+        (function () {
+            const btn = document.getElementById('btn-crashrate');
+            if (btn) btn.addEventListener('click', function () {
+                const crashes = parseFloat(document.getElementById('cr_crashes').value) || 0;
+                const years = parseFloat(document.getElementById('cr_years').value) || 0;
+                const aadt = parseFloat(document.getElementById('avgDailyTraffic').value) || 0;
+                const statewide = parseFloat(document.getElementById('cr_statewide').value) || 0;
+                const miles = 1; // Default to 1 mile
+
+                const errEl = document.getElementById('cr_error');
+                if (errEl) errEl.textContent = '';
+
+                if (crashes === 0 || years === 0 || aadt === 0) {
+                    if (errEl) errEl.textContent = 'Please enter crashes, years, and AADT';
+                    return;
+                }
+
+                const rate = (crashes / (aadt * 365 * miles * years) * 1000000).toFixed(2);
+                const multiple = statewide > 0 ? (rate / statewide).toFixed(2) : '—';
+
+                document.getElementById('cr_rate').textContent = rate;
+                document.getElementById('cr_multiple').textContent = multiple;
+            });
+        })();
+
+        // AADT Averaging
+        (function () {
+            const btn = document.getElementById('btn-aadt-avg');
+            if (btn) btn.addEventListener('click', function () {
+                const input = document.getElementById('aadt_series').value;
+                const aadts = input.split(/[\s,\n]+/).map(Number).filter(x => !isNaN(x) && x > 0);
+
+                if (aadts.length === 0) {
+                    alert('Please enter valid AADT data');
+                    return;
+                }
+
+                const avg = Math.round(aadts.reduce((a, b) => a + b, 0) / aadts.length);
+                const min = Math.min(...aadts);
+                const max = Math.max(...aadts);
+
+                document.getElementById('aadt_years').textContent = aadts.length;
+                document.getElementById('aadt_avg').textContent = avg.toLocaleString();
+                document.getElementById('aadt_min').textContent = min.toLocaleString();
+                document.getElementById('aadt_max').textContent = max.toLocaleString();
+            });
+
+            const btnUse = document.getElementById('btn-aadt-use');
+            if (btnUse) btnUse.addEventListener('click', function () {
+                const avg = document.getElementById('aadt_avg').textContent.replace(/,/g, '');
+                if (avg !== '—') {
+                    document.getElementById('avgDailyTraffic').value = avg;
+                }
+            });
+        })();
     </script>
 </body>
 
