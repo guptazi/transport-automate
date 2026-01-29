@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compact Professional Forms - VDOT Integration</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --primary: #1a5f7a;
+      --primary-dark: #134a5e;
+      --accent: #4aa3ff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --blue-50: #eff6ff;
+      --blue-500: #3b82f6;
+      --pink-50: #fdf2f8;
+      --pink-500: #ec4899;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      color: var(--primary);
+      font-size: 1.75rem;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      color: var(--gray-600);
+      font-size: 0.9rem;
+    }
+
+    /* Compact Card Styles */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .card-title svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--primary);
+    }
+
+    .vdot-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vdot-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .vdot-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Compact Form Groups */
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .form-grid.cols-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .form-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .required::after {
+      content: '*';
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 8px 10px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      background: var(--gray-50);
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
+    }
+
+    /* Info Box */
+    .info-box {
+      background: var(--blue-50);
+      border-left: 3px solid var(--blue-500);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #1e40af;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .info-box svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--blue-500);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Bidirectional Traffic Volume - Compact Design */
+    .traffic-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .traffic-box {
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid;
+    }
+
+    .traffic-box.nb {
+      background: linear-gradient(135deg, var(--blue-50), #dbeafe);
+      border-color: var(--blue-500);
+    }
+
+    .traffic-box.sb {
+      background: linear-gradient(135deg, var(--pink-50), #fce7f3);
+      border-color: var(--pink-500);
+    }
+
+    .traffic-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .traffic-box.nb .traffic-label {
+      color: #1e40af;
+    }
+
+    .traffic-box.sb .traffic-label {
+      color: #9f1239;
+    }
+
+    .traffic-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .traffic-box.nb .traffic-value {
+      color: #1e3a8a;
+    }
+
+    .traffic-box.sb .traffic-value {
+      color: #831843;
+    }
+
+    .traffic-unit {
+      font-size: 0.7rem;
+      color: inherit;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    .stats-box {
+      background: var(--gray-50);
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-200);
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+
+    .stat-row:not(:last-child) {
+      border-bottom: 1px dashed var(--gray-200);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .stat-value {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Calculator Section - Compact */
+    .calculator {
+      background: var(--gray-50);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .calculator textarea {
+      width: 100%;
+      min-height: 60px;
+      resize: vertical;
+      font-size: 0.8rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      background: var(--gray-200);
+      color: var(--gray-700);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-300);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(26, 95, 122, 0.3);
+    }
+
+    /* KPI Grid - Compact */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .kpi-box {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Crash Rate Calculator - Compact */
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .result-box {
+      background: white;
+      border: 2px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .result-label {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .result-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .form-grid.cols-2,
+      .form-grid.cols-3,
+      .traffic-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gray-300), transparent);
+      margin: 15px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--success);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Speed Study Analysis Tool - Compact Forms</h1>
+      <p>Professional compact design with VDOT data integration</p>
+    </div>
+
+    <!-- Bidirectional Traffic Volume Analysis - COMPACT -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          Bidirectional Traffic Volume Analysis
+        </div>
+        <button class="vdot-btn" onclick="fetchTrafficVolume()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          VDOT
+        </button>
+      </div>
+
+      <div class="info-box">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Directional traffic patterns inform time-of-day speed limit recommendations and variable speed limit analysis.</span>
+      </div>
+
+      <div class="traffic-grid">
+        <div class="traffic-box nb">
+          <div class="traffic-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            Northbound / Eastbound
+          </div>
+          <div class="traffic-value" id="trafficDirection1">—</div>
+          <div class="traffic-unit">vpd</div>
+        </div>
+        <div class="traffic-box sb">
+          <div class="traffic-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            Southbound / Westbound
+          </div>
+          <div class="traffic-value" id="trafficDirection2">—</div>
+          <div class="traffic-unit">vpd</div>
+        </div>
+      </div>
+
+      <div class="stats-box">
+        <div class="stat-row">
+          <span class="stat-label">Directional Split:</span>
+          <span class="stat-value" id="directionalSplit">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Balance Assessment:</span>
+          <span class="stat-value" id="balanceAssessment">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Speed Data - COMPACT -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Speed Data
+          <span class="badge">REQUIRED</span>
+        </div>
+        <button class="vdot-btn" onclick="fetchSpeedData()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          VDOT
+        </button>
+      </div>
+
+      <div class="info-box">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Enter speed data collected from your traffic study equipment.</span>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label class="required">Mean Speed (mph)</label>
+          <input type="number" id="meanSpeed" step="0.1" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>Median Speed (mph)</label>
+          <input type="number" id="medianSpeed" step="0.1" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label class="required">85th Percentile (mph)</label>
+          <input type="number" id="p85Speed" step="0.1" placeholder="0.0">
+        </div>
+      </div>
+
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label>Minimum Speed (mph)</label>
+          <input type="number" id="minSpeed" step="0.1" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>Maximum Speed (mph)</label>
+          <input type="number" id="maxSpeed" step="0.1" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>Std Deviation (mph)</label>
+          <input type="number" id="stdDev" step="0.1" placeholder="0.0">
+        </div>
+      </div>
+
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label>Total Vehicles Surveyed</label>
+          <input type="number" id="totalVehicles" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Average Daily Traffic (ADT)</label>
+          <input type="number" id="avgDailyTraffic" placeholder="510">
+        </div>
+      </div>
+
+      <!-- Calculator -->
+      <div class="calculator">
+        <div class="form-group">
+          <label style="font-size: 0.75rem;">Paste spot speeds (mph), any separators</label>
+          <textarea id="speeds" placeholder="e.g., 31 32 33 35 36 38 40 42 41 39"></textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="computePercentiles()">Compute Percentiles</button>
+          <button class="btn btn-primary" onclick="useInForm()">Use in Form</button>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <div class="kpi-label">Count</div>
+            <div class="kpi-value" id="k-count">—</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">Mean</div>
+            <div class="kpi-value" id="k-mean">—</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">50th</div>
+            <div class="kpi-value" id="k-p50">—</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">85th</div>
+            <div class="kpi-value" id="k-p85">—</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">Pace</div>
+            <div class="kpi-value" id="k-pace">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid cols-2" style="margin-top: 12px;">
+        <div class="form-group">
+          <label>% Exceeding Posted</label>
+          <input type="number" id="exceedingPosted" step="0.1" placeholder="0.0">
+        </div>
+        <div class="form-group">
+          <label>10 mph Pace Range</label>
+          <input type="text" id="paceSpeed" placeholder="e.g., 32-42">
+        </div>
+      </div>
+    </div>
+
+    <!-- Crash Rate Calculator - COMPACT -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          Crash Rate Calculator
+        </div>
+        <button class="vdot-btn" onclick="fetchCrashData()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          VDOT
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label>Total Crashes (lookback period)</label>
+        <input type="number" id="cr_crashes" step="1" placeholder="0">
+      </div>
+
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label>Years of Data</label>
+          <input type="number" id="cr_years" step="1" placeholder="3" value="3">
+        </div>
+        <div class="form-group">
+          <label>Statewide Rate (per MVMT)</label>
+          <input type="text" id="cr_statewide" placeholder="e.g., 3.2" value="3.2">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="computeCrashRate()" style="width: 100%; margin-top: 10px;">
+        Compute Rate
+      </button>
+
+      <div class="result-grid">
+        <div class="result-box">
+          <div class="result-label">Rate (per MVMT)</div>
+          <div class="result-value" id="cr_rate">—</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Multiple vs Statewide (×)</div>
+          <div class="result-value" id="cr_multiple">—</div>
+        </div>
+      </div>
+
+      <div id="cr_error" style="color: var(--danger); font-size: 0.8rem; margin-top: 10px; text-align: center;"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // VDOT API Endpoints
+    const VDOT_SERVICES = {
+      SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
+      TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0',
+      CRASH: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer/0'
+    };
+
+    // Demo coordinates (Richmond, VA)
+    const DEMO_LAT = 37.54;
+    const DEMO_LNG = -77.43;
+
+    // Fetch Traffic Volume Data
+    async function fetchTrafficVolume() {
+      try {
+        const buffer = 50;
+        const point = `${DEMO_LNG},${DEMO_LAT}`;
+        const url = `${VDOT_SERVICES.TRAFFIC_VOLUME}/query?geometry=${point}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=${buffer}&units=esriSRUnit_Meter&outFields=*&returnGeometry=false&f=json`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+          const attrs = data.features[0].attributes;
+          const aadt = attrs.AADT || attrs.AADT_2024 || attrs.TRAFFIC_VOLUME || attrs.ADT || 12500;
+
+          // Simulate directional split (50/50 +/- some variance)
+          const nb = Math.round(aadt * (0.48 + Math.random() * 0.04));
+          const sb = aadt - nb;
+
+          document.getElementById('trafficDirection1').textContent = nb.toLocaleString();
+          document.getElementById('trafficDirection2').textContent = sb.toLocaleString();
+
+          const split = `${((nb / aadt) * 100).toFixed(1)}% / ${((sb / aadt) * 100).toFixed(1)}%`;
+          document.getElementById('directionalSplit').textContent = split;
+
+          const imbalance = Math.abs(nb - sb) / aadt;
+          let assessment = 'Balanced';
+          if (imbalance > 0.15) assessment = 'Major Imbalance';
+          else if (imbalance > 0.05) assessment = 'Minor Imbalance';
+
+          document.getElementById('balanceAssessment').textContent = assessment;
+
+          // Populate ADT field
+          document.getElementById('avgDailyTraffic').value = aadt;
+
+          alert('✅ Traffic volume data loaded from VDOT!');
+        } else {
+          alert('⚠️ No VDOT traffic data found at this location. Using demo data.');
+          // Demo data
+          document.getElementById('trafficDirection1').textContent = '6,200';
+          document.getElementById('trafficDirection2').textContent = '6,300';
+          document.getElementById('directionalSplit').textContent = '49.6% / 50.4%';
+          document.getElementById('balanceAssessment').textContent = 'Balanced';
+          document.getElementById('avgDailyTraffic').value = 12500;
+        }
+      } catch (error) {
+        console.error('VDOT API Error:', error);
+        alert('❌ Error fetching VDOT data. Please try again.');
+      }
+    }
+
+    // Fetch Speed Data (VDOT reference)
+    async function fetchSpeedData() {
+      try {
+        const buffer = 50;
+        const point = `${DEMO_LNG},${DEMO_LAT}`;
+        const url = `${VDOT_SERVICES.SPEED_LIMITS}/query?geometry=${point}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=${buffer}&units=esriSRUnit_Meter&outFields=*&returnGeometry=false&f=json`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+          const attrs = data.features[0].attributes;
+          const speedLimit = attrs.SPEED_LIMIT || attrs.POSTED_SPEED_LIMIT_1 || attrs.SPD_LMT || 35;
+
+          alert(`✅ VDOT Posted Speed Limit: ${speedLimit} mph\n\nThis is for reference. Enter your actual speed study data in the fields.`);
+        } else {
+          alert('⚠️ No VDOT speed data found at this location.');
+        }
+      } catch (error) {
+        console.error('VDOT API Error:', error);
+        alert('❌ Error fetching VDOT data. Please try again.');
+      }
+    }
+
+    // Fetch Crash Data
+    async function fetchCrashData() {
+      try {
+        const years = parseInt(document.getElementById('cr_years').value) || 3;
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - years);
+
+        const buffer = 500; // 500m buffer for crashes
+        const point = `${DEMO_LNG},${DEMO_LAT}`;
+
+        // Note: This query would need proper date filtering based on VDOT's crash data structure
+        const url = `${VDOT_SERVICES.CRASH}/query?geometry=${point}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=${buffer}&units=esriSRUnit_Meter&outFields=*&returnGeometry=false&f=json`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.features) {
+          const totalCrashes = data.features.length;
+          document.getElementById('cr_crashes').value = totalCrashes;
+
+          alert(`✅ Found ${totalCrashes} crashes within 500m in VDOT database.\n\nNote: This is a proximity search. Actual crash analysis should be done for the specific roadway segment.`);
+        } else {
+          alert('⚠️ No crash data found. Using demo value.');
+          document.getElementById('cr_crashes').value = 15;
+        }
+      } catch (error) {
+        console.error('VDOT API Error:', error);
+        alert('❌ Error fetching crash data. Using demo value.');
+        document.getElementById('cr_crashes').value = 15;
+      }
+    }
+
+    // Compute Percentiles
+    function computePercentiles() {
+      const input = document.getElementById('speeds').value;
+      const speeds = input.split(/[\s,]+/).map(Number).filter(x => !isNaN(x) && x > 0).sort((a, b) => a - b);
+
+      if (speeds.length === 0) {
+        alert('Please enter valid speed data');
+        return;
+      }
+
+      const count = speeds.length;
+      const mean = (speeds.reduce((a, b) => a + b, 0) / count).toFixed(1);
+      const p50 = speeds[Math.floor(count * 0.5)];
+      const p85 = speeds[Math.ceil(count * 0.85) - 1];
+
+      // Calculate 10 mph pace
+      let maxCount = 0, paceStart = 0;
+      for (let i = 0; i < speeds.length; i++) {
+        const upper = speeds[i] + 10;
+        const paceCount = speeds.filter(s => s >= speeds[i] && s <= upper).length;
+        if (paceCount > maxCount) {
+          maxCount = paceCount;
+          paceStart = speeds[i];
+        }
+      }
+      const pace = `${paceStart}-${paceStart + 10}`;
+
+      document.getElementById('k-count').textContent = count;
+      document.getElementById('k-mean').textContent = mean;
+      document.getElementById('k-p50').textContent = p50;
+      document.getElementById('k-p85').textContent = p85;
+      document.getElementById('k-pace').textContent = pace;
+    }
+
+    // Use Calculator Results in Form
+    function useInForm() {
+      const p85 = document.getElementById('k-p85').textContent;
+      const mean = document.getElementById('k-mean').textContent;
+      const median = document.getElementById('k-p50').textContent;
+      const count = document.getElementById('k-count').textContent;
+      const pace = document.getElementById('k-pace').textContent;
+
+      if (p85 !== '—') {
+        document.getElementById('p85Speed').value = p85;
+        document.getElementById('meanSpeed').value = mean;
+        document.getElementById('medianSpeed').value = median;
+        document.getElementById('totalVehicles').value = count;
+        document.getElementById('paceSpeed').value = pace;
+        alert('✅ Calculator results populated to form!');
+      } else {
+        alert('Please compute percentiles first');
+      }
+    }
+
+    // Compute Crash Rate
+    function computeCrashRate() {
+      const crashes = parseFloat(document.getElementById('cr_crashes').value) || 0;
+      const years = parseFloat(document.getElementById('cr_years').value) || 0;
+      const aadt = parseFloat(document.getElementById('avgDailyTraffic').value) || 0;
+      const statewide = parseFloat(document.getElementById('cr_statewide').value) || 0;
+      const miles = 1; // Default to 1 mile
+
+      document.getElementById('cr_error').textContent = '';
+
+      if (crashes === 0 || years === 0 || aadt === 0) {
+        document.getElementById('cr_error').textContent = 'Please enter crashes, years, and AADT';
+        return;
+      }
+
+      const rate = (crashes / (aadt * 365 * miles * years) * 1000000).toFixed(2);
+      const multiple = statewide > 0 ? (rate / statewide).toFixed(2) : '—';
+
+      document.getElementById('cr_rate').textContent = rate;
+      document.getElementById('cr_multiple').textContent = multiple;
+
+      if (multiple >= 1.5) {
+        document.getElementById('cr_error').style.color = 'var(--danger)';
+        document.getElementById('cr_error').textContent = `⚠️ High crash rate detected (${multiple}× statewide average). Consider -5 mph adjustment.`;
+      } else {
+        document.getElementById('cr_error').style.color = 'var(--success)';
+        document.getElementById('cr_error').textContent = '✅ Crash rate within acceptable range.';
+      }
+    }
+
+    // Initialize with demo data
+    window.addEventListener('load', function() {
+      console.log('Compact Forms Demo Loaded');
+      console.log('Click VDOT buttons to fetch live data from Virginia Department of Transportation');
+    });
+  </script>
+</body>
+</html>
