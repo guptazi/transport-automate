@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Study Analysis Tool - MUTCD | VDOT | FHWA</title>
+
+    <!-- External Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet Map Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #5b7cff;
+            --primary-dark: #4a63cc;
+            --secondary: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --purple: #a855f7;
+            --teal: #14b8a6;
+            --orange: #f97316;
+            --pink: #ec4899;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .app-header {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .app-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .app-title-group {
+            flex: 1;
+        }
+
+        .app-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .app-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .completeness-bar {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .completeness-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .completeness-track {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .completeness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--purple));
+            width: 20%;
+            transition: width 0.3s ease;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-blue {
+            background: #eff6ff;
+            color: var(--primary);
+            border: 1px solid #dbeafe;
+        }
+
+        .badge-green {
+            background: #f0fdf4;
+            color: var(--success);
+            border: 1px solid #dcfce7;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: white;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1200px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            flex: 1;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Metric Cards */
+        .metric-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .metric-unit {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .metric-caption {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .metric-blue {
+            background: linear-gradient(135deg, #5b7cff, #7b93ff);
+            color: white;
+        }
+
+        .metric-teal {
+            background: linear-gradient(135deg, #14b8a6, #2dd4bf);
+            color: white;
+        }
+
+        .metric-purple {
+            background: linear-gradient(135deg, #a855f7, #c084fc);
+            color: white;
+        }
+
+        .metric-orange {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            color: white;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(91, 124, 255, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-addon {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: var(--bg);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg);
+        }
+
+        /* Speed Data Grid */
+        .speed-data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .speed-cell {
+            padding: 8px;
+            text-align: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Tabs within cards */
+        .card-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-tab {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Alert/Info Boxes */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #dbeafe;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #dcfce7;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alert ul {
+            margin: 8px 0 0 20px;
+            padding: 0;
+        }
+
+        .alert li {
+            margin: 4px 0;
+        }
+
+        /* Map Styles */
+        #map {
+            height: 400px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* Checkbox/Radio Styles */
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"],
+        .checkbox-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Recommendation Card */
+        .recommendation-card {
+            background: linear-gradient(135deg, #5b7cff, #7b93ff);
+            color: white;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .recommendation-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .recommendation-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .recommendation-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .recommendation-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .recommendation-note {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Breakdown Items */
+        .breakdown-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .breakdown-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .breakdown-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .breakdown-unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        /* Compliance Notes */
+        .compliance-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .compliance-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--success);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .compliance-text {
+            flex: 1;
+            font-size: 13px;
+            color: #166534;
+            line-height: 1.6;
+        }
+
+        /* Section Dividers */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* Crash Summary */
+        .crash-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .crash-stat {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .crash-stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .crash-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .crash-stat.fatal .crash-stat-value { color: var(--danger); }
+        .crash-stat.injury .crash-stat-value { color: var(--warning); }
+        .crash-stat.pdo .crash-stat-value { color: var(--info); }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .empty-hint {
+            font-size: 12px;
+        }
+
+        /* MUTCD Factors */
+        .factor-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .factor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .factor-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .factor-weight {
+            padding: 4px 12px;
+            background: var(--bg);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .factor-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* Button Groups */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+
+        /* Histogram */
+        .histogram-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        /* Pace Analysis */
+        .pace-box {
+            background: linear-gradient(135deg, #14b8a6, #2dd4bf);
+            color: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .pace-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pace-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .pace-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .pace-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        /* Footer */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+
+        /* Period Selector */
+        .period-selector {
+            display: inline-flex;
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .period-btn {
+            padding: 4px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn.active {
+            background: white;
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-muted { color: var(--text-muted); }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        .mb-0 { margin-bottom: 0; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 8px; }
+        .gap-4 { gap: 16px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <div class="app-logo">📊</div>
+            <div class="app-title-group">
+                <h1 class="app-title">Speed Study Analysis Tool</h1>
+                <p class="app-subtitle">MUTCD | VDOT | FHWA Compliant</p>
+            </div>
+        </div>
+
+        <div class="completeness-bar">
+            <div class="completeness-label">
+                <span>Completeness</span>
+                <span id="completenessPercent">20%</span>
+            </div>
+            <div class="completeness-track">
+                <div class="completeness-fill" id="completenessFill"></div>
+            </div>
+        </div>
+
+        <div class="header-badges">
+            <div class="header-badge badge-blue" id="p85Badge">85th: 51.0 mph</div>
+            <div class="header-badge badge-green" id="sampleBadge">n = 100</div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="newStudy()">
+                ➕ New Study
+            </button>
+            <button class="btn btn-primary" onclick="saveProject()">
+                💾 Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('speedData')">
+            <span class="tab-icon">📊</span> Speed Data
+        </button>
+        <button class="tab-btn" onclick="switchTab('roadway')">
+            <span class="tab-icon">🛣️</span> Roadway
+        </button>
+        <button class="tab-btn" onclick="switchTab('crashData')">
+            <span class="tab-icon">⚠️</span> Crash Data
+        </button>
+        <button class="tab-btn" onclick="switchTab('mutcdFactors')">
+            <span class="tab-icon">📋</span> MUTCD Factors
+        </button>
+        <button class="tab-btn" onclick="switchTab('recommendation')">
+            <span class="tab-icon">💡</span> Recommendation
+        </button>
+        <button class="tab-btn" onclick="switchTab('report')">
+            <span class="tab-icon">📄</span> Report
+        </button>
+    </div>
+
+    <!-- Speed Data Tab -->
+    <div class="tab-content active" id="speedDataTab">
+        <div class="grid-2">
+            <!-- Left Column -->
+            <div>
+                <!-- Speed Data Input -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">📝</div>
+                        <div style="flex: 1;">
+                            <h2 class="card-title">Speed Data Input</h2>
+                            <p class="card-subtitle">100 observations</p>
+                        </div>
+                    </div>
+
+                    <div class="card-tabs">
+                        <button class="card-tab active" onclick="switchInputTab('bulk')">Bulk Entry</button>
+                        <button class="card-tab" onclick="switchInputTab('upload')">File Upload</button>
+                    </div>
+
+                    <div id="bulkTab" class="tab-pane active">
+                        <div class="form-group">
+                            <label class="form-label">Enter speed values (separated by commas, spaces, or new lines)</label>
+                            <textarea class="form-textarea" id="speedDataInput" rows="6" placeholder="45, 48, 52, 47, 43, 50, 55, 44, 46, 40...">45, 48, 52, 47, 43, 50, 55, 44, 46, 40, 51, 44, 47, 45, 40, 46, 48, 49, 44, 47, 47, 47, 47, 48, 47, 46, 51, 48, 43, 52, 47, 35, 47, 46, 46, 51, 50, 39, 53, 35, 38, 44, 51, 40, 52, 46, 50, 48, 49, 50, 38, 51, 46, 48, 57, 41, 38, 44, 46, 52, 50, 38, 42, 52, 38, 47, 35, 42, 44, 50, 49, 44, 50, 38, 51, 47, 49, 53, 46, 47, 46, 52, 47, 47, 44, 47, 44, 48, 43, 46</textarea>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="processSpeedData()">
+                                ➕ Add Speed Data
+                            </button>
+                            <button class="btn btn-outline" onclick="generateSample()">
+                                🎲 Generate Sample
+                            </button>
+                            <button class="btn btn-outline" onclick="clearSpeedData()">
+                                🗑️ Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="uploadTab" class="tab-pane">
+                        <div class="form-group">
+                            <label class="form-label">Upload CSV file with speed data</label>
+                            <input type="file" class="form-input" accept=".csv" id="csvFileInput" onchange="handleCSVUpload(event)">
+                            <p class="form-hint">CSV file should have a column with speed values</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Preview -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #f3f4f6; color: var(--text-primary);">📋</div>
+                        <h2 class="card-title">Data Preview</h2>
+                    </div>
+
+                    <div id="speedDataPreview" class="speed-data-grid">
+                        <!-- Will be populated dynamically -->
+                    </div>
+
+                    <div class="alert alert-success mt-4 hidden" id="sampleSizeAlert">
+                        <div class="alert-title">✓ Sample size meets MUTCD minimum requirement (≥100)</div>
+                    </div>
+                </div>
+
+                <!-- MUTCD Guidelines -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #fef3c7; color: #92400e;">📖</div>
+                        <h2 class="card-title">MUTCD Data Collection Guidelines</h2>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <ul>
+                            <li>Minimum sample size: 100 free-flowing vehicles</li>
+                            <li>Collect during off-peak hours with good weather</li>
+                            <li>Only include vehicles traveling at their desired speed</li>
+                            <li>Exclude vehicles influenced by traffic controls or congestion</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <!-- Key Speed Metrics -->
+                <div class="grid-4 mb-4">
+                    <div class="metric-card metric-blue">
+                        <div class="metric-label">85TH PERCENTILE</div>
+                        <div><span class="metric-value" id="p85Value">51.0</span><span class="metric-unit">mph</span></div>
+                        <div class="metric-caption">Primary metric for speed limits</div>
+                    </div>
+
+                    <div class="metric-card metric-teal">
+                        <div class="metric-label">MEAN SPEED</div>
+                        <div><span class="metric-value" id="meanValue">45.3</span><span class="metric-unit">mph</span></div>
+                        <div class="metric-caption">Average of all observations</div>
+                    </div>
+
+                    <div class="metric-card metric-purple">
+                        <div class="metric-label">MEDIAN SPEED</div>
+                        <div><span class="metric-value" id="medianValue">45.5</span><span class="metric-unit">mph</span></div>
+                        <div class="metric-caption">Middle value</div>
+                    </div>
+
+                    <div class="metric-card metric-orange">
+                        <div class="metric-label">SAMPLE SIZE</div>
+                        <div><span class="metric-value" id="sampleSize">100</span><span class="metric-unit">obs</span></div>
+                        <div class="metric-caption">MUTCD compliant</div>
+                    </div>
+                </div>
+
+                <!-- Percentile Analysis -->
+                <div class="card mb-4">
+                    <h3 class="section-title">Percentile Analysis</h3>
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td><strong>10th Percentile</strong></td>
+                                <td class="text-right" id="p10Value">39.0 mph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>15th Percentile</strong></td>
+                                <td class="text-right" id="p15Value">40.0 mph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>50th Percentile (Median)</strong></td>
+                                <td class="text-right" id="p50Value">45.5 mph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>85th Percentile</strong></td>
+                                <td class="text-right" id="p85TableValue">51.0 mph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>90th Percentile</strong></td>
+                                <td class="text-right" id="p90Value">51.0 mph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>95th Percentile</strong></td>
+                                <td class="text-right" id="p95Value">53.0 mph</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pace Analysis -->
+                <div class="card">
+                    <h3 class="section-title">Pace Analysis & Distribution</h3>
+
+                    <div class="pace-box">
+                        <div class="pace-title">10 mph Pace</div>
+                        <div class="pace-value" id="paceRange">42-52 mph</div>
+                        <div class="pace-subtitle" id="pacePercent">71.0% of vehicles within this range</div>
+                        <div class="pace-badge">Good Speed Consistency</div>
+                    </div>
+
+                    <div class="grid-2 mb-4">
+                        <div>
+                            <div class="form-label">MIN SPEED</div>
+                            <div style="font-size: 24px; font-weight: 700;" id="minSpeed">32 mph</div>
+                        </div>
+                        <div>
+                            <div class="form-label">MAX SPEED</div>
+                            <div style="font-size: 24px; font-weight: 700;" id="maxSpeed">58 mph</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div>
+                            <div class="form-label">RANGE</div>
+                            <div style="font-size: 18px; font-weight: 600;" id="rangeValue">26 mph</div>
+                        </div>
+                        <div>
+                            <div class="form-label">STD DEVIATION</div>
+                            <div style="font-size: 18px; font-weight: 600;" id="stdDev">4.97</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speed Distribution Histogram -->
+                <div class="card mt-4">
+                    <h3 class="section-title">Speed Distribution Histogram</h3>
+                    <div class="histogram-container">
+                        <canvas id="speedHistogram"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="bottom-bar">
+            <div>
+                <div class="form-label mb-0">Recommended Speed Limit</div>
+                <div style="font-size: 24px; font-weight: 700;">50 mph</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="compliance-icon">✓</div>
+                <span style="font-size: 13px; color: var(--success); font-weight: 500;">85th %ile: 51.0 mph</span>
+            </div>
+            <button class="btn btn-primary" onclick="generateReport()">
+                📄 Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Roadway Tab -->
+    <div class="tab-content" id="roadwayTab">
+        <div class="grid-2">
+            <!-- Left Column -->
+            <div>
+                <!-- Road Classification -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">🛣️</div>
+                        <h2 class="card-title">Road Classification & Type</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Functional Classification</label>
+                        <select class="form-select" id="functionalClass">
+                            <option value="">Select classification...</option>
+                            <option value="interstate">Interstate</option>
+                            <option value="principal-arterial">Principal Arterial</option>
+                            <option value="minor-arterial">Minor Arterial</option>
+                            <option value="major-collector">Major Collector</option>
+                            <option value="minor-collector">Minor Collector</option>
+                            <option value="local">Local</option>
+                        </select>
+                        <p class="form-hint">FHWA classification system</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Area Type</label>
+                        <select class="form-select" id="areaType">
+                            <option value="">Select area type...</option>
+                            <option value="urban">Urban</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="rural">Rural</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Land Use</label>
+                        <select class="form-select" id="landUse">
+                            <option value="">Select land use...</option>
+                            <option value="residential">Residential</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="industrial">Industrial</option>
+                            <option value="mixed">Mixed Use</option>
+                            <option value="institutional">Institutional</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Posted Speed Limit</label>
+                        <div class="input-group">
+                            <input type="number" class="form-input" id="postedSpeed" placeholder="e.g. 35">
+                            <span class="input-addon">mph</span>
+                        </div>
+                        <p class="form-hint">Current posted speed limit</p>
+                    </div>
+                </div>
+
+                <!-- Cross Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #f3f4f6; color: var(--text-primary);">📏</div>
+                        <h2 class="card-title">Cross Section & Geometry</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Number of Lanes</label>
+                        <input type="number" class="form-input" id="numLanes" placeholder="e.g. 4">
+                        <p class="form-hint">Total both directions</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Lane Width</label>
+                        <div class="input-group">
+                            <input type="number" class="form-input" id="laneWidth" placeholder="e.g. 12">
+                            <span class="input-addon">feet</span>
+                        </div>
+                        <p class="form-hint">Typical lane width</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Median Type</label>
+                        <select class="form-select" id="medianType">
+                            <option value="">Select type...</option>
+                            <option value="none">No Median</option>
+                            <option value="painted">Painted/TWLTL</option>
+                            <option value="raised">Raised Median</option>
+                            <option value="barrier">Barrier</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shoulder Type</label>
+                        <select class="form-select" id="shoulderType">
+                            <option value="">Select type...</option>
+                            <option value="none">No Shoulder</option>
+                            <option value="paved">Paved</option>
+                            <option value="gravel">Gravel</option>
+                            <option value="curbed">Curbed</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shoulder Width</label>
+                        <div class="input-group">
+                            <input type="number" class="form-input" id="shoulderWidth" placeholder="e.g. 8">
+                            <span class="input-addon">feet</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pavement Condition</label>
+                        <select class="form-select" id="pavementCondition">
+                            <option value="">Select condition...</option>
+                            <option value="excellent">Excellent</option>
+                            <option value="good">Good</option>
+                            <option value="fair">Fair</option>
+                            <option value="poor">Poor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Alignment -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #fef3c7; color: #92400e;">📐</div>
+                        <h2 class="card-title">Alignment & Sight Distance</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Horizontal Alignment</label>
+                        <select class="form-select" id="horizAlignment">
+                            <option value="">Select assessment...</option>
+                            <option value="straight">Straight / Tangent</option>
+                            <option value="gentle-curves">Gentle Curves</option>
+                            <option value="sharp-curves">Sharp Curves</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Vertical Alignment</label>
+                        <select class="form-select" id="vertAlignment">
+                            <option value="">Select assessment...</option>
+                            <option value="flat">Flat / Level</option>
+                            <option value="rolling">Rolling Terrain</option>
+                            <option value="hilly">Hilly / Mountainous</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Stopping Sight Distance</label>
+                        <select class="form-select" id="sightDistance">
+                            <option value="">Select assessment...</option>
+                            <option value="adequate">Adequate - Meets AASHTO standards</option>
+                            <option value="limited">Limited - Some restrictions</option>
+                            <option value="restricted">Restricted - Safety concern</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Access Points per Mile</label>
+                        <input type="number" class="form-input" id="accessPoints" placeholder="e.g. 25">
+                        <p class="form-hint">Driveways + intersections</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <!-- Roadside Features -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(135deg, var(--teal), #2dd4bf); color: white;">🚶</div>
+                        <h2 class="card-title">Roadside Features & Activity</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pedestrian Activity</label>
+                        <select class="form-select" id="pedActivity">
+                            <option value="">Select level...</option>
+                            <option value="high">High</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="low">Low</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bicycle Activity</label>
+                        <select class="form-select" id="bikeActivity">
+                            <option value="">Select level...</option>
+                            <option value="high">High</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="low">Low</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">On-Street Parking</label>
+                        <select class="form-select" id="onStreetParking">
+                            <option value="">Select type...</option>
+                            <option value="both">Both Sides</option>
+                            <option value="one">One Side</option>
+                            <option value="none">No Parking</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label">Roadside Features Present</label>
+                    </div>
+
+                    <div class="checkbox-group mb-3">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sidewalksPresent">
+                            <label for="sidewalksPresent">Sidewalks Present</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="bikeLanes">
+                            <label for="bikeLanes">Bike Lanes</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="streetLighting">
+                            <label for="streetLighting">Street Lighting</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Location -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(135deg, var(--purple), #c084fc); color: white;">📍</div>
+                        <h2 class="card-title">Study Location</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Search address or intersection...</label>
+                        <div class="input-group">
+                            <input type="text" class="form-input" id="locationSearch" placeholder="Search address or intersection...">
+                            <button class="btn btn-primary" onclick="searchLocation()">🔍</button>
+                        </div>
+                    </div>
+
+                    <div id="map"></div>
+
+                    <div class="grid-2 mt-4">
+                        <div class="form-group">
+                            <label class="form-label">Latitude</label>
+                            <input type="text" class="form-input" id="latitude" placeholder="e.g. 37.5407">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input type="text" class="form-input" id="longitude" placeholder="e.g. -77.4360">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        Click on the map to set the study location. VDOT data will be automatically fetched for Virginia locations.
+                    </div>
+                </div>
+
+                <!-- Data Import -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #f3f4f6; color: var(--text-primary);">🔄</div>
+                        <h2 class="card-title">Data Import</h2>
+                        <button class="btn btn-sm btn-outline" onclick="refreshVDOTData()">🔄 Refresh</button>
+                    </div>
+
+                    <div class="alert alert-info mb-3">
+                        <div class="alert-title">📍 Virginia Jurisdiction</div>
+                        <p class="mb-0">Select county or city...</p>
+                    </div>
+
+                    <div class="form-group">
+                        <select class="form-select" id="jurisdiction">
+                            <option value="">Select county or city...</option>
+                            <option value="albemarle">Albemarle County</option>
+                            <option value="richmond">City of Richmond</option>
+                            <option value="henrico">Henrico County</option>
+                            <option value="fairfax">Fairfax County</option>
+                        </select>
+                    </div>
+
+                    <div class="section mb-3">
+                        <div class="form-label">Data Sources</div>
+                    </div>
+
+                    <div class="checkbox-group mb-3">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="vdotTraffic" checked>
+                            <label for="vdotTraffic">📊 VDOT Traffic Data</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="censusTiger">
+                            <label for="censusTiger">🗺️ Census TigerWeb</label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success">
+                        Data auto-fetches from VDOT and Census TigerWeb APIs when you select a location on the map.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crash Data Tab -->
+    <div class="tab-content" id="crashDataTab">
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, var(--danger), #dc2626); color: white;">⚠️</div>
+                <h2 class="card-title">Crash Analysis Summary</h2>
+                <div class="period-selector">
+                    <button class="period-btn active">3 Year Period</button>
+                </div>
+            </div>
+
+            <div class="crash-summary">
+                <div class="crash-stat">
+                    <div class="crash-stat-value">0</div>
+                    <div class="crash-stat-label">Total Crashes</div>
+                </div>
+                <div class="crash-stat fatal">
+                    <div class="crash-stat-value">0</div>
+                    <div class="crash-stat-label">Fatal</div>
+                </div>
+                <div class="crash-stat injury">
+                    <div class="crash-stat-value">0</div>
+                    <div class="crash-stat-label">Injury</div>
+                </div>
+                <div class="crash-stat pdo">
+                    <div class="crash-stat-value">0</div>
+                    <div class="crash-stat-label">PDO</div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <div class="alert-title">Speed-Related Crashes</div>
+                <div style="font-size: 24px; font-weight: 700; margin-top: 8px;">0 (0%)</div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="card-title">Crash Records</h2>
+                <button class="btn btn-sm btn-primary" onclick="addCrash()">
+                    ➕ Add Crash
+                </button>
+            </div>
+
+            <div class="empty-state">
+                <div class="empty-icon">🚗</div>
+                <div class="empty-text">No crash records added yet</div>
+                <div class="empty-hint">Add crash data to include in the analysis</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #eff6ff; color: var(--info);">📖</div>
+                <h2 class="card-title">FHWA Crash Analysis Guidance</h2>
+            </div>
+
+            <div class="alert alert-info mb-0">
+                <ul>
+                    <li>Analyze minimum 3 years of crash data</li>
+                    <li>Calculate crash rate per million vehicle miles (MVM)</li>
+                    <li>Compare to statewide averages for similar facilities</li>
+                    <li>Pay special attention to speed-related and severe crashes</li>
+                    <li>Consider crash patterns when evaluating speed limit changes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- MUTCD Factors Tab -->
+    <div class="tab-content" id="mutcdFactorsTab">
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">📋</div>
+                <h2 class="card-title">MUTCD Engineering Study Factors</h2>
+                <div class="alert-title" style="font-size: 12px; color: var(--text-secondary);">0/5 Complete</div>
+            </div>
+
+            <p class="text-muted mb-4">Assess each factor per MUTCD Section 2B.13 guidance for establishing speed zones</p>
+        </div>
+
+        <!-- Factor 1 -->
+        <div class="factor-card">
+            <div class="factor-header">
+                <div class="factor-title">
+                    <span>ℹ️</span>
+                    Road Surface Characteristics, Shoulder Condition, Grade, Alignment, and Sight Distance
+                </div>
+                <div class="factor-weight">20% weight</div>
+            </div>
+            <div class="factor-description">Physical characteristics of the roadway that affect safe operating speed</div>
+
+            <div class="form-group">
+                <select class="form-select" id="factor1">
+                    <option value="">Select assessment...</option>
+                    <option value="excellent">Excellent - All characteristics support higher speeds</option>
+                    <option value="good">Good - Most characteristics adequate</option>
+                    <option value="fair">Fair - Some limitations present</option>
+                    <option value="poor">Poor - Significant constraints exist</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Factor 2 -->
+        <div class="factor-card">
+            <div class="factor-header">
+                <div class="factor-title">
+                    <span>⚠️</span>
+                    Crash Experience
+                </div>
+                <div class="factor-weight">20% weight</div>
+            </div>
+            <div class="factor-description">Analysis of crash history for the study segment</div>
+
+            <div class="form-group">
+                <select class="form-select" id="factor2">
+                    <option value="">Select assessment...</option>
+                    <option value="low">Low - Below average crash rate, minimal speed-related crashes</option>
+                    <option value="moderate">Moderate - Average crash rate for facility type</option>
+                    <option value="high">High - Above average crash rate or crash pattern concerns</option>
+                    <option value="severe">Severe - Significant safety issues, many speed-related crashes</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Factor 3 -->
+        <div class="factor-card">
+            <div class="factor-header">
+                <div class="factor-title">
+                    <span>🏘️</span>
+                    Roadside Development and Environment
+                </div>
+                <div class="factor-weight">15% weight</div>
+            </div>
+            <div class="factor-description">Adjacent land use, access density, and roadside hazards</div>
+
+            <div class="form-group">
+                <select class="form-select" id="factor3">
+                    <option value="">Select assessment...</option>
+                    <option value="low">Low Development - Rural, minimal access points</option>
+                    <option value="moderate">Moderate Development - Suburban, controlled access</option>
+                    <option value="high">High Development - Urban, frequent driveways/intersections</option>
+                    <option value="very-high">Very High - Dense mixed-use, numerous conflict points</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Factor 4 -->
+        <div class="factor-card">
+            <div class="factor-header">
+                <div class="factor-title">
+                    <span>🚶</span>
+                    Parking Practices and Pedestrian Activity
+                </div>
+                <div class="factor-weight">15% weight</div>
+            </div>
+            <div class="factor-description">On-street parking and pedestrian movement patterns</div>
+
+            <div class="form-group">
+                <select class="form-select" id="factor4">
+                    <option value="">Select assessment...</option>
+                    <option value="minimal">Minimal - No parking, rare pedestrian activity</option>
+                    <option value="low">Low - Limited parking, occasional pedestrians</option>
+                    <option value="moderate">Moderate - Parking present, regular pedestrian traffic</option>
+                    <option value="high">High - Frequent parking turnover, high pedestrian volumes</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Factor 5 -->
+        <div class="factor-card">
+            <div class="factor-header">
+                <div class="factor-title">
+                    <span>📊</span>
+                    Reported 85th Percentile Speed and Pace Speed
+                </div>
+                <div class="factor-weight">30% weight</div>
+            </div>
+            <div class="factor-description">Results from the speed study</div>
+
+            <div class="form-group">
+                <select class="form-select" id="factor5">
+                    <option value="">Select assessment...</option>
+                    <option value="consistent">Highly Consistent - 85th %ile and pace align closely</option>
+                    <option value="good">Good Consistency - Minor variation between metrics</option>
+                    <option value="moderate">Moderate - Some variation, acceptable distribution</option>
+                    <option value="poor">Poor - Wide speed variance, inconsistent driver behavior</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f3f4f6; color: var(--text-primary);">📝</div>
+                <h2 class="card-title">Additional Engineering Notes</h2>
+            </div>
+
+            <div class="form-group">
+                <textarea class="form-textarea" id="engineeringNotes" rows="4" placeholder="Document any additional observations, unusual conditions, or justifications for the speed limit recommendation..."></textarea>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="alert alert-info mb-0">
+                <div class="alert-title">📖 MUTCD Reference</div>
+                <p class="mb-0">Per MUTCD Section 2B.13, speed limits should be established based on an engineering study that considers the above factors. The 85th percentile speed is typically the starting point, with adjustments made based on engineering judgment and local conditions.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendation Tab -->
+    <div class="tab-content" id="recommendationTab">
+        <div class="grid-2">
+            <div>
+                <div class="recommendation-card">
+                    <div class="recommendation-title">Recommended Speed Limit</div>
+                    <div class="recommendation-value">50</div>
+                    <div class="recommendation-label">miles per hour</div>
+                    <div class="recommendation-badge">High Confidence</div>
+                    <div class="recommendation-note">
+                        <div>
+                            <div style="font-size: 11px; opacity: 0.8;">Recommendation</div>
+                            <div style="font-size: 16px; font-weight: 600;">Maintain Current</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="section-title">Recommendation Breakdown</h3>
+
+                    <div class="breakdown-item">
+                        <div>
+                            <div class="breakdown-label">Base Speed (85th Percentile)</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Primary factor per MUTCD guidelines</div>
+                        </div>
+                        <div>
+                            <span class="breakdown-value">50</span>
+                            <span class="breakdown-unit">mph</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-item">
+                        <div>
+                            <div class="breakdown-label">Final Recommendation</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">50 mph base (no adjustments)</div>
+                        </div>
+                        <div>
+                            <span class="breakdown-value">50</span>
+                            <span class="breakdown-unit">mph</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: linear-gradient(135deg, var(--success), #16a34a); color: white;">✓</div>
+                        <h2 class="card-title">MUTCD & VDOT Compliance Notes</h2>
+                    </div>
+
+                    <div class="compliance-note">
+                        <div class="compliance-icon">✓</div>
+                        <div class="compliance-text">
+                            Sample size of 100 meets MUTCD minimum requirement of 100 vehicles.
+                        </div>
+                    </div>
+
+                    <div class="compliance-note">
+                        <div class="compliance-icon">✓</div>
+                        <div class="compliance-text">
+                            Pace percentage of 71.0% indicates good speed consistency among drivers.
+                        </div>
+                    </div>
+
+                    <div class="section mt-4">
+                        <div class="section-title">Documentation Requirements</div>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <ul>
+                            <li>Complete engineering study report with all MUTCD factors assessed</li>
+                            <li>Speed study data collection methodology documentation</li>
+                            <li>Crash analysis for minimum 3-year period</li>
+                            <li>Field review documentation with photos</li>
+                            <li>Engineering judgment justification for any adjustments from 85th percentile</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Tab -->
+    <div class="tab-content" id="reportTab">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">📄</div>
+                <h2 class="card-title">Generate Report</h2>
+            </div>
+
+            <p class="text-muted mb-4">Export your speed study analysis as a professional report</p>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateFullReport()">
+                    📄 Generate Full Report (PDF)
+                </button>
+                <button class="btn btn-success" onclick="generateWordDoc()">
+                    📝 Export to Word
+                </button>
+                <button class="btn btn-info" onclick="exportData()">
+                    💾 Export Data (JSON)
+                </button>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <div class="alert-title">Report Includes</div>
+                <ul>
+                    <li>Executive summary with speed limit recommendation</li>
+                    <li>Complete speed data analysis and statistics</li>
+                    <li>Speed distribution histogram</li>
+                    <li>MUTCD engineering factors assessment</li>
+                    <li>Crash data analysis (if available)</li>
+                    <li>Roadway characteristics documentation</li>
+                    <li>Engineering judgment and recommendations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let speedData = [];
+        let currentTab = 'speedData';
+        let map = null;
+        let marker = null;
+        let histogramChart = null;
+
+        // Sample data from screenshots
+        const sampleData = [45, 48, 52, 47, 43, 50, 55, 44, 46, 40, 51, 44, 47, 45, 40, 46, 48, 49, 44, 47, 47, 47, 47, 48, 47, 46, 51, 48, 43, 52, 47, 35, 47, 46, 46, 51, 50, 39, 53, 35, 38, 44, 51, 40, 52, 46, 50, 48, 49, 50, 38, 51, 46, 48, 57, 41, 38, 44, 46, 52, 50, 38, 42, 52, 38, 47, 35, 42, 44, 50, 49, 44, 50, 38, 51, 47, 49, 53, 46, 47, 46, 52, 47, 47, 44, 47, 44, 48, 43, 46];
+        speedData = [...sampleData];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            processSpeedData();
+            updateCompleteness();
+        });
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.tab-btn').classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            currentTab = tabName;
+
+            // Refresh map if switching to roadway tab
+            if (tabName === 'roadway' && map) {
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        }
+
+        // Input Tab Switching
+        function switchInputTab(tabName) {
+            document.querySelectorAll('.card-tab').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Speed Data Processing
+        function processSpeedData() {
+            const input = document.getElementById('speedDataInput').value;
+
+            if (input.trim()) {
+                // Parse input - handle commas, spaces, and newlines
+                const values = input.split(/[\s,\n]+/).filter(v => v.trim() !== '').map(v => parseFloat(v)).filter(v => !isNaN(v));
+                speedData = values;
+            }
+
+            if (speedData.length === 0) return;
+
+            // Sort data
+            const sorted = [...speedData].sort((a, b) => a - b);
+
+            // Calculate statistics
+            const stats = calculateStatistics(sorted);
+
+            // Update UI
+            updateMetrics(stats);
+            updateDataPreview();
+            updateHistogram(sorted);
+            updateHeaderBadges(stats);
+            updateCompleteness();
+        }
+
+        function calculateStatistics(sorted) {
+            const n = sorted.length;
+
+            // Basic stats
+            const min = sorted[0];
+            const max = sorted[n - 1];
+            const mean = sorted.reduce((a, b) => a + b, 0) / n;
+
+            // Median
+            const median = n % 2 === 0
+                ? (sorted[n/2 - 1] + sorted[n/2]) / 2
+                : sorted[Math.floor(n/2)];
+
+            // Percentiles
+            const p10 = percentile(sorted, 10);
+            const p15 = percentile(sorted, 15);
+            const p50 = median;
+            const p85 = percentile(sorted, 85);
+            const p90 = percentile(sorted, 90);
+            const p95 = percentile(sorted, 95);
+
+            // Standard deviation
+            const variance = sorted.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n;
+            const stdDev = Math.sqrt(variance);
+
+            // Pace (10 mph range with most vehicles)
+            const pace = calculatePace(sorted);
+
+            // Range
+            const range = max - min;
+
+            // Recommended speed (round 85th percentile to nearest 5)
+            const recommendedSpeed = Math.round(p85 / 5) * 5;
+
+            return {
+                n, min, max, mean, median,
+                p10, p15, p50, p85, p90, p95,
+                stdDev, pace, range, recommendedSpeed
+            };
+        }
+
+        function percentile(sorted, p) {
+            const index = (p / 100) * (sorted.length - 1);
+            const lower = Math.floor(index);
+            const upper = Math.ceil(index);
+            const weight = index - lower;
+
+            if (lower === upper) return sorted[lower];
+            return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+        }
+
+        function calculatePace(sorted) {
+            let bestPace = { start: 0, end: 10, count: 0, percent: 0 };
+
+            for (let start = Math.floor(sorted[0]); start <= Math.ceil(sorted[sorted.length - 1]) - 10; start++) {
+                const end = start + 10;
+                const count = sorted.filter(v => v >= start && v <= end).length;
+                const percent = (count / sorted.length) * 100;
+
+                if (count > bestPace.count) {
+                    bestPace = { start, end, count, percent };
+                }
+            }
+
+            return bestPace;
+        }
+
+        function updateMetrics(stats) {
+            document.getElementById('p85Value').textContent = stats.p85.toFixed(1);
+            document.getElementById('meanValue').textContent = stats.mean.toFixed(1);
+            document.getElementById('medianValue').textContent = stats.median.toFixed(1);
+            document.getElementById('sampleSize').textContent = stats.n;
+
+            document.getElementById('p10Value').textContent = stats.p10.toFixed(1) + ' mph';
+            document.getElementById('p15Value').textContent = stats.p15.toFixed(1) + ' mph';
+            document.getElementById('p50Value').textContent = stats.p50.toFixed(1) + ' mph';
+            document.getElementById('p85TableValue').textContent = stats.p85.toFixed(1) + ' mph';
+            document.getElementById('p90Value').textContent = stats.p90.toFixed(1) + ' mph';
+            document.getElementById('p95Value').textContent = stats.p95.toFixed(1) + ' mph';
+
+            document.getElementById('minSpeed').textContent = stats.min + ' mph';
+            document.getElementById('maxSpeed').textContent = stats.max + ' mph';
+            document.getElementById('rangeValue').textContent = stats.range + ' mph';
+            document.getElementById('stdDev').textContent = stats.stdDev.toFixed(2);
+
+            document.getElementById('paceRange').textContent = stats.pace.start + '-' + stats.pace.end + ' mph';
+            document.getElementById('pacePercent').textContent = stats.pace.percent.toFixed(1) + '% of vehicles within this range';
+
+            // Show/hide sample size alert
+            const alert = document.getElementById('sampleSizeAlert');
+            if (stats.n >= 100) {
+                alert.classList.remove('hidden');
+            } else {
+                alert.classList.add('hidden');
+            }
+        }
+
+        function updateDataPreview() {
+            const preview = document.getElementById('speedDataPreview');
+            preview.innerHTML = speedData.map(speed =>
+                `<div class="speed-cell">${speed} mph</div>`
+            ).join('');
+        }
+
+        function updateHeaderBadges(stats) {
+            document.getElementById('p85Badge').textContent = `85th: ${stats.p85.toFixed(1)} mph`;
+            document.getElementById('sampleBadge').textContent = `n = ${stats.n}`;
+        }
+
+        function updateHistogram(sorted) {
+            // Create histogram bins
+            const min = Math.floor(sorted[0] / 5) * 5;
+            const max = Math.ceil(sorted[sorted.length - 1] / 5) * 5;
+            const binSize = 5;
+            const bins = [];
+
+            for (let i = min; i <= max; i += binSize) {
+                bins.push({
+                    label: `${i}-${i + binSize}`,
+                    start: i,
+                    end: i + binSize,
+                    count: 0
+                });
+            }
+
+            // Count values in each bin
+            sorted.forEach(speed => {
+                const binIndex = Math.floor((speed - min) / binSize);
+                if (binIndex >= 0 && binIndex < bins.length) {
+                    bins[binIndex].count++;
+                }
+            });
+
+            // Create or update chart
+            const ctx = document.getElementById('speedHistogram');
+            if (!ctx) return;
+
+            if (histogramChart) {
+                histogramChart.destroy();
+            }
+
+            histogramChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: bins.map(b => b.label),
+                    datasets: [{
+                        label: 'Frequency',
+                        data: bins.map(b => b.count),
+                        backgroundColor: bins.map((b, i) => {
+                            // Highlight the bin containing 85th percentile
+                            const p85 = percentile(sorted, 85);
+                            if (p85 >= b.start && p85 < b.end) {
+                                return '#f97316'; // Orange for 85th percentile bin
+                            }
+                            return '#5b7cff'; // Primary color
+                        }),
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1f2937',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: {
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Speed (mph)',
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Count',
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            },
+                            grid: {
+                                color: '#f3f4f6'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCompleteness() {
+            // Calculate completeness based on filled fields
+            let completed = 0;
+            let total = 6; // Number of main sections
+
+            // Speed Data
+            if (speedData.length >= 100) completed++;
+
+            // Roadway
+            const roadwayFields = ['functionalClass', 'areaType', 'postedSpeed', 'numLanes'];
+            if (roadwayFields.every(id => document.getElementById(id)?.value)) completed++;
+
+            // Crash Data - placeholder
+            // completed++; // Uncomment when crash data is entered
+
+            // MUTCD Factors
+            const factorFields = ['factor1', 'factor2', 'factor3', 'factor4', 'factor5'];
+            if (factorFields.every(id => document.getElementById(id)?.value)) completed++;
+
+            const percent = Math.round((completed / total) * 100);
+            document.getElementById('completenessPercent').textContent = percent + '%';
+            document.getElementById('completenessFill').style.width = percent + '%';
+        }
+
+        // Map Functions
+        function initializeMap() {
+            // Initialize Leaflet map centered on Richmond, VA
+            map = L.map('map').setView([37.5407, -77.4360], 13);
+
+            // Add base layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add click handler
+            map.on('click', function(e) {
+                placeMarker(e.latlng);
+            });
+        }
+
+        function placeMarker(latlng) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            marker = L.marker(latlng).addTo(map);
+
+            document.getElementById('latitude').value = latlng.lat.toFixed(4);
+            document.getElementById('longitude').value = latlng.lng.toFixed(4);
+
+            // In real implementation, would fetch VDOT data here
+            // fetchVDOTData(latlng);
+        }
+
+        function searchLocation() {
+            const query = document.getElementById('locationSearch').value;
+            // In real implementation, would use geocoding API
+            alert('Location search would use geocoding API. For demo, click on map to set location.');
+        }
+
+        function refreshVDOTData() {
+            alert('This would refresh VDOT data from ArcGIS services for the selected location.');
+        }
+
+        // Data Management
+        function generateSample() {
+            // Generate random sample data
+            const sample = [];
+            for (let i = 0; i < 100; i++) {
+                // Generate speeds with normal distribution around 45 mph
+                const speed = Math.round(45 + (Math.random() - 0.5) * 20);
+                sample.push(Math.max(30, Math.min(60, speed))); // Clamp between 30-60
+            }
+
+            document.getElementById('speedDataInput').value = sample.join(', ');
+            processSpeedData();
+        }
+
+        function clearSpeedData() {
+            if (confirm('Are you sure you want to clear all speed data?')) {
+                speedData = [];
+                document.getElementById('speedDataInput').value = '';
+                document.getElementById('speedDataPreview').innerHTML = '';
+                updateCompleteness();
+            }
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Simple CSV parsing - in production, would use PapaParse
+                const text = e.target.result;
+                const lines = text.split('\n');
+                const values = [];
+
+                lines.forEach(line => {
+                    const cells = line.split(',');
+                    cells.forEach(cell => {
+                        const val = parseFloat(cell.trim());
+                        if (!isNaN(val) && val > 0 && val < 100) {
+                            values.push(val);
+                        }
+                    });
+                });
+
+                if (values.length > 0) {
+                    document.getElementById('speedDataInput').value = values.join(', ');
+                    processSpeedData();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Project Management
+        function newStudy() {
+            if (confirm('Start a new study? This will clear all current data.')) {
+                location.reload();
+            }
+        }
+
+        function saveProject() {
+            const project = {
+                timestamp: new Date().toISOString(),
+                speedData: speedData,
+                roadway: {
+                    functionalClass: document.getElementById('functionalClass')?.value,
+                    areaType: document.getElementById('areaType')?.value,
+                    landUse: document.getElementById('landUse')?.value,
+                    postedSpeed: document.getElementById('postedSpeed')?.value,
+                    numLanes: document.getElementById('numLanes')?.value,
+                    laneWidth: document.getElementById('laneWidth')?.value,
+                    medianType: document.getElementById('medianType')?.value,
+                    shoulderType: document.getElementById('shoulderType')?.value,
+                    shoulderWidth: document.getElementById('shoulderWidth')?.value,
+                    pavementCondition: document.getElementById('pavementCondition')?.value,
+                    horizAlignment: document.getElementById('horizAlignment')?.value,
+                    vertAlignment: document.getElementById('vertAlignment')?.value,
+                    sightDistance: document.getElementById('sightDistance')?.value,
+                    accessPoints: document.getElementById('accessPoints')?.value,
+                    pedActivity: document.getElementById('pedActivity')?.value,
+                    bikeActivity: document.getElementById('bikeActivity')?.value,
+                    onStreetParking: document.getElementById('onStreetParking')?.value,
+                    latitude: document.getElementById('latitude')?.value,
+                    longitude: document.getElementById('longitude')?.value
+                },
+                mutcdFactors: {
+                    factor1: document.getElementById('factor1')?.value,
+                    factor2: document.getElementById('factor2')?.value,
+                    factor3: document.getElementById('factor3')?.value,
+                    factor4: document.getElementById('factor4')?.value,
+                    factor5: document.getElementById('factor5')?.value,
+                    engineeringNotes: document.getElementById('engineeringNotes')?.value
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `speed-study-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Report Generation
+        function generateReport() {
+            alert('Report generation would create a comprehensive PDF with all study data and analysis.');
+        }
+
+        function generateFullReport() {
+            alert('Full report generation would create a detailed PDF report with all sections.');
+        }
+
+        function generateWordDoc() {
+            alert('Word document export would create a formatted .docx file.');
+        }
+
+        function exportData() {
+            saveProject();
+        }
+
+        // Crash Management
+        function addCrash() {
+            alert('Crash record entry form would appear here.');
+        }
+    </script>
+</body>
+</html>
