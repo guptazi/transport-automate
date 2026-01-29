@@ -8,6 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Leaflet Map Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -151,6 +153,45 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .upload-box {
+            border: 2px dashed var(--gray-300);
+            background: var(--gray-50);
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .data-table.small td,
+        .data-table.small th {
+            font-size: 0.85rem;
+            padding: 8px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .pill.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pill.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pill.warning {
+            background: #fef3c7;
+            color: #92400e;
         }
 
         @keyframes shimmer {
@@ -1568,6 +1609,28 @@
                     <span>YIELD (R1-2)</span>
                 </div>
             </div>
+
+            <div style="padding: 20px 24px; background: #ffffff; border-top: 1px solid #e2e8f0;">
+                <h3 style="margin-bottom: 10px; color: #1a5f7a;">GIS Speed Study Layers</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Upload GeoJSON or shapefile (ZIP)
+                    to visualize segments with color-coded speed metrics and before/after comparisons.</p>
+                <div style="display:flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                    <input type="file" id="gisUpload" accept=".geojson,.json,.zip">
+                    <select id="gisMetricSelector"
+                        style="padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <option value="p85">85th Percentile (p85)</option>
+                        <option value="mean">Mean Speed</option>
+                        <option value="speed_diff">Speed Diff (Observed - Posted)</option>
+                        <option value="before_after">Before/After Diff</option>
+                    </select>
+                    <button class="btn btn-secondary" id="btn-clear-gis">Clear GIS Layer</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #475569;">
+                    Required properties recommended: <code>route_id</code>, <code>county</code>,
+                    <code>direction</code>, <code>posted_speed</code>, <code>mean</code>, <code>p85</code>,
+                    <code>before_p85</code>, <code>after_p85</code>.
+                </div>
+            </div>
         </div>
 
         <div class="main-grid">
@@ -1765,6 +1828,63 @@
                     </div>
                 </div>
 
+                <!-- Speed Data Upload & Batch Processing -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.9A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M12 11v6m0 0l-3-3m3 3l3-3" />
+                        </svg>
+                        Speed Data Upload & Batch Processing
+                    </h2>
+
+                    <div class="upload-box">
+                        <p style="margin-bottom: 8px; color: var(--gray-600);">Upload CSV or Excel with columns like
+                            <strong>speed</strong>, <strong>location</strong>, <strong>direction</strong>,
+                            <strong>posted_speed</strong>, <strong>route_id</strong>, <strong>county</strong>.
+                        </p>
+                        <input type="file" id="speedDataUpload" accept=".csv,.xlsx,.xls">
+                        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" id="btn-parse-speed">Parse & Compute</button>
+                            <button class="btn btn-primary" id="btn-export-excel">Export Results (Excel)</button>
+                            <button class="btn btn-info" id="btn-export-raw">Export Raw (CSV)</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Batch processing supports multiple locations and directions. Results will rank
+                                locations by speeding severity (85th percentile minus posted speed).</span>
+                        </div>
+                        <table class="data-table small" style="margin-top: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Direction</th>
+                                    <th>Posted</th>
+                                    <th>P85</th>
+                                    <th>Speeding %</th>
+                                    <th>Condition</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchResultsTable">
+                                <tr>
+                                    <td colspan="6">Upload data to generate batch results.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="corridorSummary"
+                            style="margin-top: 12px; font-size: 0.9rem; color: var(--gray-600);">
+                            Corridor summary will appear after batch processing.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Traffic Volume Data -->
                 <div class="card" style="margin-top: 25px;">
                     <h2 class="card-title">
@@ -1801,6 +1921,147 @@
                         <label for="crashNarrative">Crash Pattern Notes</label>
                         <textarea id="crashNarrative" rows="3"
                             placeholder="Describe any crash patterns observed..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Enhanced Crash Severity Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #ef4444, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#ef4444">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Enhanced Crash Severity Analysis
+                    </h2>
+
+                    <div class="alert" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border-left: 4px solid #ef4444;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#ef4444">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span><strong>MUTCD Requirement:</strong> Speed limit decisions must consider crash severity patterns. High severity crashes may warrant -5 mph adjustment.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: linear-gradient(135deg, #fee2e2, #fecaca); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fca5a5;">
+                            <div style="font-size: 0.75rem; color: #991b1b; font-weight: 600; margin-bottom: 5px;">FATAL</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7f1d1d;" id="crashFatal">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fed7aa, #fdba74); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fb923c;">
+                            <div style="font-size: 0.75rem; color: #9a3412; font-weight: 600; margin-bottom: 5px;">SEVERE INJURY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7c2d12;" id="crashSevere">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fcd34d;">
+                            <div style="font-size: 0.75rem; color: #92400e; font-weight: 600; margin-bottom: 5px;">MINOR INJURY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #78350f;" id="crashMinor">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #93c5fd;">
+                            <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600; margin-bottom: 5px;">PDO ONLY</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #1e3a8a;" id="crashPDO">—</div>
+                        </div>
+                    </div>
+
+                    <div id="crashSeverityAlert" style="display: none; padding: 15px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1)); border-radius: 12px; border-left: 5px solid #ef4444; margin-top: 15px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <div style="font-weight: 700; color: #991b1b; font-size: 1.05rem;">High Severity Crash History Detected</div>
+                                <div style="color: #7f1d1d; font-size: 0.9rem; margin-top: 4px;" id="crashSeverityMessage">Automatic -5 mph speed adjustment recommended due to crash severity pattern.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bidirectional Traffic Volume Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#3b82f6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        Bidirectional Traffic Volume Analysis
+                    </h2>
+
+                    <div class="alert" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)); border-left: 4px solid #3b82f6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#3b82f6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Directional traffic patterns can inform time-of-day speed limit recommendations and variable speed limit analysis.</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; border: 2px solid #60a5fa;">
+                            <div style="font-size: 0.8rem; color: #1e40af; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                </svg>
+                                NORTHBOUND / EASTBOUND
+                            </div>
+                            <div style="font-size: 2.2rem; font-weight: 700; color: #1e3a8a;" id="trafficDirection1">—</div>
+                            <div style="font-size: 0.75rem; color: #1e40af; margin-top: 5px;">vpd</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fce7f3, #fbcfe8); padding: 18px; border-radius: 12px; border: 2px solid #f9a8d4;">
+                            <div style="font-size: 0.8rem; color: #9f1239; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                                SOUTHBOUND / WESTBOUND
+                            </div>
+                            <div style="font-size: 2.2rem; font-weight: 700; color: #831843;" id="trafficDirection2">—</div>
+                            <div style="font-size: 0.75rem; color: #9f1239; margin-top: 5px;">vpd</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px; padding: 15px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 10px; border: 1px solid #bae6fd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #0c4a6e;">Directional Split:</span>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #0369a1;" id="directionalSplit">—</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #0c4a6e;">Balance Assessment:</span>
+                            <span style="font-size: 0.95rem; font-weight: 600; color: #0369a1;" id="balanceAssessment">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Intersection Density Analysis -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#8b5cf6">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Intersection Density Analysis
+                    </h2>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 18px;">
+                        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fcd34d;">
+                            <div style="font-size: 0.75rem; color: #92400e; font-weight: 600; margin-bottom: 5px;">SIGNALIZED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #78350f;" id="intersectionSignalized">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fed7aa, #fdba74); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #fb923c;">
+                            <div style="font-size: 0.75rem; color: #9a3412; font-weight: 600; margin-bottom: 5px;">STOP CONTROLLED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #7c2d12;" id="intersectionStop">—</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #93c5fd;">
+                            <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600; margin-bottom: 5px;">UNSIGNALIZED</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #1e3a8a;" id="intersectionUnsignalized">—</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 15px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05)); border-radius: 10px; border-left: 4px solid #8b5cf6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #5b21b6;">Intersection Density:</span>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: #6d28d9;" id="intersectionDensity">— per mile</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #5b21b6;">NACTO Assessment:</span>
+                            <span style="font-size: 1rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: rgba(139, 92, 246, 0.2); color: #5b21b6;" id="intersectionNACTO">—</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1895,6 +2156,84 @@
                     <div id="conflictDensityResult" class="result-box result-moderate">
                         <h3>MODERATE CONFLICT DENSITY</h3>
                         <p>Complete the checklist above to see your result</p>
+                    </div>
+                </div>
+
+                <!-- VDOT Rule-Based Recommendation Engine -->
+                <div class="card" style="margin-top: 25px;">
+                    <h2 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 11V7a4 4 0 018 0v4m-8 0h8m-8 0H7m4 0v6m0 0l-2-2m2 2l2-2" />
+                        </svg>
+                        VDOT Rule-Based Recommendation Engine
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="areaType">Area Type *</label>
+                            <select id="areaType">
+                                <option value="">Select area type</option>
+                                <option value="urban">Urban</option>
+                                <option value="suburban">Suburban</option>
+                                <option value="rural">Rural</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="laneCount">Lane Count *</label>
+                            <select id="laneCount">
+                                <option value="">Select lanes</option>
+                                <option value="2">2 lanes</option>
+                                <option value="3">3 lanes</option>
+                                <option value="4">4 lanes</option>
+                                <option value="5">5+ lanes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="medianType">Median Type *</label>
+                            <select id="medianType">
+                                <option value="">Select median</option>
+                                <option value="none">No median</option>
+                                <option value="two-way-left">Two-way left turn lane</option>
+                                <option value="raised">Raised/curbed median</option>
+                                <option value="flush">Flush/painted median</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="accessDensity">Access Density (driveways per mile)</label>
+                            <input type="number" id="accessDensity" step="1" placeholder="Optional">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pedPresence">Pedestrian or School Zone</label>
+                            <select id="pedPresence">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="directionalStudy">Directional Study</label>
+                            <select id="directionalStudy">
+                                <option value="bidirectional">Both Directions</option>
+                                <option value="northbound">Northbound</option>
+                                <option value="southbound">Southbound</option>
+                                <option value="eastbound">Eastbound</option>
+                                <option value="westbound">Westbound</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="btn-rule-engine">Run Recommendation</button>
+                    </div>
+
+                    <div class="result-box result-moderate" id="ruleEngineResult">
+                        <h3>RECOMMENDED SPEED RANGE: -- MPH</h3>
+                        <p>Complete inputs and run the recommendation engine for a VDOT-aligned recommendation.</p>
+                        <p style="margin-top: 8px;"><strong>Confidence:</strong> --%</p>
+                        <p id="ruleEngineJustification" style="margin-top: 8px; font-style: italic;"></p>
                     </div>
                 </div>
 
@@ -2064,6 +2403,34 @@
                     </svg>
                     NACTO Risk Matrix & Recommended Speed Limit
                 </h2>
+
+                <!-- MUTCD 11th Edition Warning System -->
+                <div id="mutcdWarning" style="display: none; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1)); border-radius: 14px; border: 3px solid #f59e0b; animation: glow 2s ease-in-out infinite;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2.5" style="flex-shrink: 0;">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; color: #92400e; font-size: 1.25rem; margin-bottom: 10px;">
+                                ⚠️ MUTCD 11TH EDITION NOTICE
+                            </div>
+                            <div style="color: #78350f; font-size: 1rem; line-height: 1.6; margin-bottom: 12px;" id="mutcdWarningText">
+                                This roadway is classified as an <strong>Urban/Suburban Arterial</strong>. Per MUTCD Section 2B.13 (Effective January 18, 2024),
+                                the <strong>85th percentile speed should NOT be used as the primary factor</strong> for setting speed limits without considering other factors
+                                like land use, pedestrian activity, crash history, and roadway context.
+                            </div>
+                            <div style="padding: 12px 16px; background: rgba(255, 255, 255, 0.8); border-radius: 8px; border-left: 4px solid #d97706;">
+                                <div style="font-weight: 700; color: #92400e; margin-bottom: 6px;">RECOMMENDED METHODOLOGY:</div>
+                                <div style="color: #78350f; font-size: 0.95rem;">
+                                    ✓ Use NACTO Safe Speed Study methodology (context-sensitive analysis)<br>
+                                    ✓ Consider conflict density and activity level<br>
+                                    ✓ 85th percentile should be supplemental only, not primary
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="risk-matrix">
                     <div class="risk-matrix-cell"></div>
@@ -2254,6 +2621,11 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: var(--primary); margin-bottom: 10px;">Speed Distribution</h4>
+                        <canvas id="speedDistributionChart" height="120"></canvas>
+                    </div>
                 </div>
 
                 <div id="nacto-tab" class="tab-content">
@@ -2280,6 +2652,14 @@
                 </div>
 
                 <div class="btn-group" style="margin-top: 25px;">
+                    <button class="btn btn-info" onclick="exportPdfReport()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export PDF
+                    </button>
                     <button class="btn btn-primary" onclick="generateWordDoc()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -3415,6 +3795,342 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
     </script>
 
     <script>
+        let uploadedSpeedRows = [];
+        let batchResults = [];
+        let speedDistributionChart;
+
+        function normalizeHeader(header) {
+            return (header || '')
+                .toString()
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/[^a-z0-9_]/g, '');
+        }
+
+        function getField(row, keys) {
+            for (const key of keys) {
+                if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+                    return row[key];
+                }
+            }
+            return null;
+        }
+
+        function parseUploadRows(data) {
+            return data.map(raw => {
+                const normalized = {};
+                Object.keys(raw).forEach(key => {
+                    normalized[normalizeHeader(key)] = raw[key];
+                });
+                return normalized;
+            });
+        }
+
+        function computeSpeedStats(speeds) {
+            const sorted = [...speeds].sort((a, b) => a - b);
+            const count = sorted.length;
+            const mean = count ? sorted.reduce((a, b) => a + b, 0) / count : 0;
+            const median = count ? sorted[Math.floor(count * 0.5)] : 0;
+            const p85 = count ? sorted[Math.ceil(count * 0.85) - 1] : 0;
+            const min = count ? sorted[0] : 0;
+            const max = count ? sorted[count - 1] : 0;
+            let maxCount = 0;
+            let paceStart = 0;
+            sorted.forEach(start => {
+                const upper = start + 10;
+                const paceCount = sorted.filter(s => s >= start && s <= upper).length;
+                if (paceCount > maxCount) {
+                    maxCount = paceCount;
+                    paceStart = start;
+                }
+            });
+            const pace = count ? `${paceStart}-${paceStart + 10}` : '--';
+            return { count, mean, median, p85, min, max, pace };
+        }
+
+        function computeSpeedingPercent(speeds, postedSpeed) {
+            if (!postedSpeed || speeds.length === 0) return 0;
+            const speeding = speeds.filter(s => s > postedSpeed).length;
+            return (speeding / speeds.length) * 100;
+        }
+
+        function speedPostingStatus(posted, p85) {
+            if (!posted || !p85) return { label: 'Insufficient data', type: 'warning' };
+            if (p85 >= posted + 5) return { label: 'Underposted', type: 'danger' };
+            if (p85 <= posted - 5) return { label: 'Overposted', type: 'warning' };
+            return { label: 'Appropriate', type: 'success' };
+        }
+
+        function updateSpeedDistributionChart(speeds) {
+            if (!speeds || speeds.length === 0) return;
+            const min = Math.min(...speeds);
+            const max = Math.max(...speeds);
+            const binSize = 5;
+            const bins = [];
+            const baseStart = Math.floor(min / binSize) * binSize;
+            for (let start = baseStart; start <= max; start += binSize) {
+                bins.push({ label: `${start}-${start + binSize}`, count: 0 });
+            }
+            speeds.forEach(speed => {
+                const index = Math.min(Math.floor((speed - baseStart) / binSize), bins.length - 1);
+                if (bins[index]) bins[index].count += 1;
+            });
+
+            const ctx = document.getElementById('speedDistributionChart');
+            if (!ctx) return;
+            if (speedDistributionChart) speedDistributionChart.destroy();
+            speedDistributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: bins.map(b => b.label),
+                    datasets: [{
+                        label: 'Vehicle Count',
+                        data: bins.map(b => b.count),
+                        backgroundColor: '#1a5f7a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Speed (mph)' } },
+                        y: { title: { display: true, text: 'Count' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function updateBatchTable(results) {
+            const tbody = document.getElementById('batchResultsTable');
+            if (!tbody) return;
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Upload data to generate batch results.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = results.map(item => `
+                <tr>
+                    <td>${item.location}</td>
+                    <td>${item.direction}</td>
+                    <td>${item.postedSpeed ? item.postedSpeed + ' mph' : '--'}</td>
+                    <td>${item.stats.p85.toFixed(1)} mph</td>
+                    <td>${item.speedingPct.toFixed(1)}%</td>
+                    <td><span class="pill ${item.status.type}">${item.status.label}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function updateCorridorSummary(results) {
+            const summaryEl = document.getElementById('corridorSummary');
+            if (!summaryEl) return;
+            if (results.length === 0) {
+                summaryEl.textContent = 'Corridor summary will appear after batch processing.';
+                return;
+            }
+            const top = results.slice(0, 3);
+            const summary = top.map(item => `${item.location} (${item.direction}) +${item.severity.toFixed(1)} mph`).join('; ');
+            summaryEl.innerHTML = `<strong>Priority Review (Top 3):</strong> ${summary}`;
+        }
+
+        function updateFormFromBatch(result) {
+            if (!result) return;
+            document.getElementById('meanSpeed').value = result.stats.mean.toFixed(1);
+            document.getElementById('medianSpeed').value = result.stats.median.toFixed(1);
+            document.getElementById('p85Speed').value = result.stats.p85.toFixed(1);
+            document.getElementById('minSpeed').value = result.stats.min.toFixed(1);
+            document.getElementById('maxSpeed').value = result.stats.max.toFixed(1);
+            document.getElementById('totalVehicles').value = result.stats.count;
+            document.getElementById('paceSpeed').value = result.stats.pace;
+            document.getElementById('exceedingPosted').value = result.speedingPct.toFixed(1);
+            if (result.postedSpeed) document.getElementById('currentSpeedLimit').value = result.postedSpeed;
+            updateSpeedDistributionChart(result.speeds);
+        }
+
+        function parseSpeedFile(file) {
+            return new Promise((resolve, reject) => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        if (ext === 'csv') {
+                            const text = e.target.result;
+                            const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+                            resolve(parseUploadRows(parsed.data));
+                        } else {
+                            const workbook = XLSX.read(e.target.result, { type: 'array' });
+                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                            resolve(parseUploadRows(json));
+                        }
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                if (ext === 'csv') reader.readAsText(file);
+                else reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function handleSpeedUpload() {
+            const fileInput = document.getElementById('speedDataUpload');
+            if (!fileInput || !fileInput.files.length) {
+                alert('Please select a CSV or Excel file.');
+                return;
+            }
+            const file = fileInput.files[0];
+            const rows = await parseSpeedFile(file);
+            uploadedSpeedRows = rows;
+
+            const grouped = {};
+            rows.forEach(row => {
+                const speedVal = parseFloat(getField(row, ['speed', 'speed_mph', 'spot_speed', 'velocity_mph']));
+                if (isNaN(speedVal)) return;
+                const location = getField(row, ['location', 'site', 'segment', 'segment_id', 'route_id']) || 'Location';
+                const direction = (getField(row, ['direction', 'dir', 'travel_direction']) || 'Both').toString();
+                const postedSpeed = parseFloat(getField(row, ['posted_speed', 'posted', 'speed_limit', 'postedlimit']));
+                const key = `${location}||${direction}`;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        location,
+                        direction,
+                        postedSpeed: isNaN(postedSpeed) ? null : postedSpeed,
+                        speeds: []
+                    };
+                }
+                grouped[key].speeds.push(speedVal);
+            });
+
+            batchResults = Object.values(grouped).map(group => {
+                const stats = computeSpeedStats(group.speeds);
+                const speedingPct = computeSpeedingPercent(group.speeds, group.postedSpeed);
+                const status = speedPostingStatus(group.postedSpeed, stats.p85);
+                const severity = group.postedSpeed ? stats.p85 - group.postedSpeed : 0;
+                return { ...group, stats, speedingPct, status, severity, speeds: group.speeds };
+            }).sort((a, b) => b.severity - a.severity);
+
+            updateBatchTable(batchResults);
+            updateCorridorSummary(batchResults);
+            updateFormFromBatch(batchResults[0]);
+        }
+
+        function exportBatchResults() {
+            if (!batchResults.length) {
+                alert('No batch results to export.');
+                return;
+            }
+            const exportRows = batchResults.map(item => ({
+                Location: item.location,
+                Direction: item.direction,
+                PostedSpeed: item.postedSpeed || '',
+                Mean: item.stats.mean.toFixed(1),
+                Median: item.stats.median.toFixed(1),
+                P85: item.stats.p85.toFixed(1),
+                Pace: item.stats.pace,
+                SpeedingPercent: item.speedingPct.toFixed(1),
+                Condition: item.status.label
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'SpeedStudySummary');
+            XLSX.writeFile(workbook, 'speed_study_summary.xlsx');
+        }
+
+        function exportRawCsv() {
+            if (!uploadedSpeedRows.length) {
+                alert('No raw data to export.');
+                return;
+            }
+            const csv = Papa.unparse(uploadedSpeedRows);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'speed_study_raw.csv';
+            link.click();
+        }
+
+        function runRuleEngine() {
+            const functionalClass = document.getElementById('roadwayClass').value;
+            const areaType = document.getElementById('areaType').value;
+            const laneCount = parseInt(document.getElementById('laneCount').value, 10);
+            const medianType = document.getElementById('medianType').value;
+            const accessDensity = parseFloat(document.getElementById('accessDensity').value);
+            const pedPresence = document.getElementById('pedPresence').value === 'yes';
+            const meanSpeed = parseFloat(document.getElementById('meanSpeed').value) || null;
+            const p85Speed = parseFloat(document.getElementById('p85Speed').value) || null;
+
+            const baseRanges = {
+                local: { urban: [20, 25], suburban: [25, 30], rural: [30, 35] },
+                'collector-minor': { urban: [25, 30], suburban: [30, 35], rural: [35, 40] },
+                'collector-major': { urban: [30, 35], suburban: [35, 40], rural: [40, 45] },
+                'arterial-minor': { urban: [30, 40], suburban: [35, 45], rural: [40, 50] },
+                'arterial-major': { urban: [35, 45], suburban: [40, 50], rural: [45, 55] }
+            };
+
+            if (!functionalClass || !areaType || !laneCount || !medianType) {
+                alert('Please complete required rule-based inputs.');
+                return;
+            }
+
+            let range = [...baseRanges[functionalClass][areaType]];
+
+            if (laneCount >= 4) range = range.map(val => val + 5);
+            if (medianType === 'raised') range = range.map(val => val + 5);
+            if (medianType === 'none') range = range.map(val => val - 5);
+            if (!isNaN(accessDensity)) {
+                if (accessDensity >= 60) range = range.map(val => val - 10);
+                else if (accessDensity >= 30) range = range.map(val => val - 5);
+            }
+            if (pedPresence) range = range.map(val => val - 5);
+
+            range = range.map(val => Math.max(15, Math.min(val, 60)));
+            range = [Math.min(...range), Math.max(...range)];
+
+            let confidence = 70;
+            if (meanSpeed && p85Speed) confidence += 10;
+            if (!isNaN(accessDensity)) confidence += 5;
+            if (pedPresence) confidence += 5;
+            if (p85Speed && (p85Speed < range[0] - 5 || p85Speed > range[1] + 5)) confidence -= 10;
+            confidence = Math.max(45, Math.min(confidence, 95));
+
+            const justification = `Based on the ${areaType} context, ${functionalClass.replace('-', ' ')} functional classification, ` +
+                `${laneCount}-lane cross-section, and a ${medianType.replace('-', ' ')} median treatment, ` +
+                `the recommended regulatory speed range is ${range[0]}-${range[1]} mph. ` +
+                `${!isNaN(accessDensity) ? `The access density of ${accessDensity} driveways per mile was considered. ` : ''}` +
+                `${pedPresence ? 'Pedestrian or school zone activity supports a conservative speed range. ' : ''}` +
+                `${meanSpeed && p85Speed ? `Observed mean speed is ${meanSpeed.toFixed(1)} mph and the 85th percentile is ${p85Speed.toFixed(1)} mph, supporting the proposed range. ` : ''}` +
+                `This recommendation is intended to align with VDOT context-sensitive speed management practices and provide a defensible engineering basis.`;
+
+            const resultBox = document.getElementById('ruleEngineResult');
+            resultBox.innerHTML = `
+                <h3>RECOMMENDED SPEED RANGE: ${range[0]}-${range[1]} MPH</h3>
+                <p>Directional focus: ${document.getElementById('directionalStudy').value.replace('-', ' ')}</p>
+                <p style="margin-top: 8px;"><strong>Confidence:</strong> ${confidence}%</p>
+                <p id="ruleEngineJustification" style="margin-top: 8px; font-style: italic;">${justification}</p>
+            `;
+        }
+
+        function exportPdfReport() {
+            const target = document.getElementById('memoPreview');
+            if (!target) return;
+            html2canvas(target).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF('p', 'pt', 'a4');
+                const width = pdf.internal.pageSize.getWidth();
+                const height = (canvas.height * width) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+                pdf.save('speed_study_memo.pdf');
+            });
+        }
+
+        document.getElementById('btn-parse-speed')?.addEventListener('click', handleSpeedUpload);
+        document.getElementById('btn-export-excel')?.addEventListener('click', exportBatchResults);
+        document.getElementById('btn-export-raw')?.addEventListener('click', exportRawCsv);
+        document.getElementById('btn-rule-engine')?.addEventListener('click', runRuleEngine);
+    </script>
+
+    <script>
         // 85th percentile calculator handlers
         (function () {
             const btnCalc = document.getElementById('btn-calc');
@@ -3532,6 +4248,7 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
     <!-- Esri Leaflet for VDOT ArcGIS Integration -->
     <script src="https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@4.2.3/dist/esri-leaflet-vector.js"></script>
@@ -3548,17 +4265,92 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
         let baseLayers = {};
         let currentBaseLayer;
         let tigerwebLayer;
+        let gisSpeedLayer;
 
         // VDOT API Endpoints
         const VDOT_SERVICES = {
             SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
             TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0',
+            BIDIRECTIONAL_TRAFFIC: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Bidirectional_Traffic_Volume/FeatureServer/0',
             CRASHES: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer/0',
             SIDEWALKS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Sidewalk_Inventory/FeatureServer/0',
-            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0'
+            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0',
+            INTERSECTIONS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/LRS_Road_Intersections/FeatureServer/0',
+            ROUTE_MASTER: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/LRS_Route_Master/FeatureServer/0'
         };
 
         let vaBoundaryLayer;
+
+        function getSpeedMetricValue(properties, metric) {
+            if (!properties) return 0;
+            if (metric === 'p85') return parseFloat(properties.p85 || properties.p85_speed || properties.p85_mph) || 0;
+            if (metric === 'mean') return parseFloat(properties.mean || properties.mean_speed || properties.mean_mph) || 0;
+            if (metric === 'speed_diff') {
+                const observed = parseFloat(properties.p85 || properties.p85_speed || properties.p85_mph) || 0;
+                const posted = parseFloat(properties.posted_speed || properties.posted || properties.speed_limit) || 0;
+                return observed - posted;
+            }
+            if (metric === 'before_after') {
+                const before = parseFloat(properties.before_p85 || properties.before_speed) || 0;
+                const after = parseFloat(properties.after_p85 || properties.after_speed) || 0;
+                return after - before;
+            }
+            return 0;
+        }
+
+        function getSpeedColor(value, metric) {
+            if (metric === 'before_after') {
+                if (value <= -5) return '#2563eb';
+                if (value <= -1) return '#93c5fd';
+                if (value < 1) return '#e2e8f0';
+                if (value < 5) return '#fdba74';
+                return '#dc2626';
+            }
+            if (metric === 'speed_diff') {
+                if (value <= -5) return '#15803d';
+                if (value <= -1) return '#86efac';
+                if (value < 1) return '#e2e8f0';
+                if (value < 5) return '#fbbf24';
+                return '#dc2626';
+            }
+            if (value <= 20) return '#16a34a';
+            if (value <= 30) return '#84cc16';
+            if (value <= 40) return '#facc15';
+            if (value <= 50) return '#f97316';
+            return '#dc2626';
+        }
+
+        function styleSpeedSegment(feature) {
+            const metric = document.getElementById('gisMetricSelector')?.value || 'p85';
+            const value = getSpeedMetricValue(feature.properties || {}, metric);
+            return {
+                color: getSpeedColor(value, metric),
+                weight: 4,
+                opacity: 0.9
+            };
+        }
+
+        function popupForSegment(properties) {
+            const posted = properties.posted_speed || properties.posted || properties.speed_limit || '--';
+            const mean = properties.mean || properties.mean_speed || properties.mean_mph || '--';
+            const p85 = properties.p85 || properties.p85_speed || properties.p85_mph || '--';
+            const before = properties.before_p85 || properties.before_speed || '--';
+            const after = properties.after_p85 || properties.after_speed || '--';
+            const diff = getSpeedMetricValue(properties, 'speed_diff');
+            return `
+                <div style="min-width: 220px;">
+                    <div style="font-weight: 700; color: #1a5f7a; margin-bottom: 6px;">Route ${properties.route_id || properties.segment_id || 'Segment'}</div>
+                    <div style="font-size: 12px; color: #475569;">${properties.county || ''} ${properties.direction ? '• ' + properties.direction : ''}</div>
+                    <table style="width: 100%; margin-top: 8px; font-size: 12px;">
+                        <tr><td>Posted Speed</td><td style="text-align:right;">${posted} mph</td></tr>
+                        <tr><td>Mean Speed</td><td style="text-align:right;">${mean} mph</td></tr>
+                        <tr><td>85th Percentile</td><td style="text-align:right;">${p85} mph</td></tr>
+                        <tr><td>Observed vs Posted</td><td style="text-align:right;">${diff.toFixed(1)} mph</td></tr>
+                        <tr><td>Before/After</td><td style="text-align:right;">${before} → ${after}</td></tr>
+                    </table>
+                </div>
+            `;
+        }
 
         // Initialize Embedded Map
         function initEmbeddedMap() {
@@ -3954,15 +4746,143 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                     }
                 } catch (e) { console.warn('Bike/Ped query failed', e); }
 
-                // 4. Query Crashes (Count nearby)
+                // 4. Query Crashes (Count nearby) - ENHANCED with Severity Analysis
                 try {
                     const crashCollection = await queryEsriService(VDOT_SERVICES.CRASHES, latlng, 200, true);
-                    if (crashCollection) {
+                    if (crashCollection && crashCollection.features) {
                         updateField('crashCount', crashCollection.features.length, 'VDOT');
+
+                        // Enhanced Crash Severity Analysis
+                        let fatalCount = 0, severeCount = 0, minorCount = 0, pdoCount = 0;
+                        crashCollection.features.forEach(feature => {
+                            const severity = feature.properties.CRASH_SEVERITY || feature.properties.Severity || '';
+                            const severityLower = severity.toLowerCase();
+
+                            if (severityLower.includes('fatal') || severityLower.includes('k')) fatalCount++;
+                            else if (severityLower.includes('severe') || severityLower.includes('injury') || severityLower.includes('a')) severeCount++;
+                            else if (severityLower.includes('minor') || severityLower.includes('b') || severityLower.includes('c')) minorCount++;
+                            else pdoCount++;
+                        });
+
+                        // Update severity displays
+                        document.getElementById('crashFatal').textContent = fatalCount;
+                        document.getElementById('crashSevere').textContent = severeCount;
+                        document.getElementById('crashMinor').textContent = minorCount;
+                        document.getElementById('crashPDO').textContent = pdoCount;
+
+                        // Show alert if high severity crashes detected
+                        if (fatalCount > 0 || severeCount > 2) {
+                            const alertDiv = document.getElementById('crashSeverityAlert');
+                            const messageDiv = document.getElementById('crashSeverityMessage');
+                            alertDiv.style.display = 'block';
+
+                            if (fatalCount > 0) {
+                                messageDiv.textContent = `${fatalCount} fatal crash(es) detected in last 3-5 years. Automatic -5 mph speed adjustment strongly recommended per MUTCD safety requirements.`;
+                            } else {
+                                messageDiv.textContent = `${severeCount} severe injury crashes detected. Consider -5 mph speed adjustment to reduce crash severity risk.`;
+                            }
+                        }
                     }
                 } catch (e) { console.warn('Crash query failed', e); }
 
-                // 5. Check Sidewalks for Checkboxes
+                // 5. Query Bidirectional Traffic Volume - NEW FEATURE
+                try {
+                    const biDirResult = await queryEsriService(VDOT_SERVICES.BIDIRECTIONAL_TRAFFIC, latlng, 150);
+                    if (biDirResult) {
+                        const dir1 = biDirResult.AADT_NB || biDirResult.AADT_EB || biDirResult.AADT_1 || 0;
+                        const dir2 = biDirResult.AADT_SB || biDirResult.AADT_WB || biDirResult.AADT_2 || 0;
+                        const total = dir1 + dir2;
+
+                        if (total > 0) {
+                            document.getElementById('trafficDirection1').textContent = dir1.toLocaleString();
+                            document.getElementById('trafficDirection2').textContent = dir2.toLocaleString();
+
+                            const split1 = ((dir1 / total) * 100).toFixed(0);
+                            const split2 = ((dir2 / total) * 100).toFixed(0);
+                            document.getElementById('directionalSplit').textContent = `${split1}% / ${split2}%`;
+
+                            // Assess balance
+                            const imbalance = Math.abs(dir1 - dir2) / total;
+                            let assessment = '';
+                            if (imbalance < 0.15) assessment = 'Balanced ✓';
+                            else if (imbalance < 0.30) assessment = 'Moderate Imbalance';
+                            else assessment = 'High Imbalance ⚠️';
+                            document.getElementById('balanceAssessment').textContent = assessment;
+                        }
+                    }
+                } catch (e) { console.warn('Bidirectional traffic query failed', e); }
+
+                // 6. Query Intersections - NEW FEATURE
+                try {
+                    const corridorLength = parseFloat(document.getElementById('corridorLength').value) || 0.5;
+                    const bufferMeters = (corridorLength * 1609.34) / 2; // Convert miles to meters, half corridor
+                    const intersectionCollection = await queryEsriService(VDOT_SERVICES.INTERSECTIONS, latlng, bufferMeters, true);
+
+                    if (intersectionCollection && intersectionCollection.features) {
+                        let signalized = 0, stopControlled = 0, unsignalized = 0;
+
+                        intersectionCollection.features.forEach(feature => {
+                            const type = (feature.properties.INTERSECTION_TYPE || feature.properties.CONTROL_TYPE || '').toLowerCase();
+
+                            if (type.includes('signal')) signalized++;
+                            else if (type.includes('stop') || type.includes('yield')) stopControlled++;
+                            else unsignalized++;
+                        });
+
+                        document.getElementById('intersectionSignalized').textContent = signalized;
+                        document.getElementById('intersectionStop').textContent = stopControlled;
+                        document.getElementById('intersectionUnsignalized').textContent = unsignalized;
+
+                        const totalIntersections = signalized + stopControlled + unsignalized;
+                        const density = corridorLength > 0 ? (totalIntersections / corridorLength).toFixed(1) : 0;
+                        document.getElementById('intersectionDensity').textContent = `${density} per mile`;
+
+                        // NACTO Assessment based on density
+                        let nactoAssessment = '';
+                        const densityNum = parseFloat(density);
+                        if (densityNum >= 12) nactoAssessment = 'HIGH DENSITY ⚠️';
+                        else if (densityNum >= 6) nactoAssessment = 'MODERATE';
+                        else nactoAssessment = 'LOW ✓';
+                        document.getElementById('intersectionNACTO').textContent = nactoAssessment;
+
+                        // Auto-check crossing density checkboxes
+                        const quarterMileDensity = densityNum / 4;
+                        if (quarterMileDensity >= 3) {
+                            document.getElementById('highCrossingDensity').checked = true;
+                        } else if (quarterMileDensity >= 1) {
+                            document.getElementById('moderateCrossingDensity').checked = true;
+                        } else {
+                            document.getElementById('lowCrossingDensity').checked = true;
+                        }
+                    }
+                } catch (e) { console.warn('Intersection query failed', e); }
+
+                // 7. Query Route Master for Classification - NEW FEATURE
+                try {
+                    const routeResult = await queryEsriService(VDOT_SERVICES.ROUTE_MASTER, latlng, 150);
+                    if (routeResult) {
+                        const functionalClass = routeResult.FUNCTIONAL_CLASS || routeResult.FC_DESC || '';
+                        const areaType = routeResult.AREA_TYPE || routeResult.URBAN_CODE || '';
+
+                        // Check if MUTCD 11th Edition warning should be shown
+                        const classLower = functionalClass.toLowerCase();
+                        const areaLower = areaType.toLowerCase();
+                        const isArterial = classLower.includes('arterial') || classLower.includes('principal');
+                        const isUrbanSuburban = areaLower.includes('urban') || areaLower.includes('suburb') || areaType !== '';
+
+                        if (isArterial && isUrbanSuburban) {
+                            document.getElementById('mutcdWarning').style.display = 'block';
+
+                            // Update warning text with specific classification
+                            const warningText = document.getElementById('mutcdWarningText');
+                            warningText.innerHTML = `This roadway is classified as an <strong>${functionalClass}</strong> in an <strong>${areaType || 'Urban/Suburban'}</strong> context.
+                                Per MUTCD Section 2B.13 (Effective January 18, 2024), the <strong>85th percentile speed should NOT be used as the primary factor</strong>
+                                for setting speed limits without considering other factors like land use, pedestrian activity, crash history, and roadway context.`;
+                        }
+                    }
+                } catch (e) { console.warn('Route master query failed', e); }
+
+                // 8. Check Sidewalks for Checkboxes
                 try {
                     const sidewalkResult = await queryEsriService(VDOT_SERVICES.SIDEWALKS, latlng, 100);
                     const noSidewalksCheck = document.getElementById('noSidewalks');
@@ -4479,6 +5399,48 @@ ${data.ccList ? `<p style="margin-top: 30px;"><strong>Distribution:</strong> ${d
                 topBtn.click();
             });
         })();
+
+        async function handleGisUpload(file) {
+            if (!file) return;
+            let geojson;
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'zip') {
+                geojson = await shp(file);
+            } else {
+                const text = await file.text();
+                geojson = JSON.parse(text);
+            }
+            if (gisSpeedLayer) {
+                embeddedMap.removeLayer(gisSpeedLayer);
+            }
+            gisSpeedLayer = L.geoJSON(geojson, {
+                style: styleSpeedSegment,
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(popupForSegment(feature.properties || {}));
+                }
+            }).addTo(embeddedMap);
+            if (gisSpeedLayer.getBounds().isValid()) {
+                embeddedMap.fitBounds(gisSpeedLayer.getBounds(), { padding: [30, 30] });
+            }
+        }
+
+        function updateGisStyles() {
+            if (!gisSpeedLayer) return;
+            gisSpeedLayer.setStyle(styleSpeedSegment);
+        }
+
+        function clearGisLayer() {
+            if (gisSpeedLayer) {
+                embeddedMap.removeLayer(gisSpeedLayer);
+                gisSpeedLayer = null;
+            }
+        }
+
+        document.getElementById('gisUpload')?.addEventListener('change', (e) => {
+            handleGisUpload(e.target.files[0]).catch(err => console.error('GIS upload failed', err));
+        });
+        document.getElementById('gisMetricSelector')?.addEventListener('change', updateGisStyles);
+        document.getElementById('btn-clear-gis')?.addEventListener('click', clearGisLayer);
 
         // Ensure the embedded map is initialized after all resources
         window.addEventListener('load', function () {
