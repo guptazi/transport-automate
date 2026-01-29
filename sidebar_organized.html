@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Study Analysis Tool - NACTO City Limits</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Leaflet Map Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        :root {
+            --primary: #1a5f7a;
+            --primary-dark: #134a5e;
+            --secondary: #57837b;
+            --accent: #c38154;
+            --accent-light: #e8a87c;
+            --light: #f9e2af;
+            --white: #ffffff;
+            --gray-50: #fafafa;
+            --gray-100: #f5f5f5;
+            --gray-200: #e5e5e5;
+            --gray-300: #d4d4d4;
+            --gray-600: #525252;
+            --gray-800: #262626;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+            overflow: hidden;
+            background: #f4f7fb;
+        }
+
+        /* App Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Header */
+        .app-header {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .app-header h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-header-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #f8fafc;
+            overflow-y: auto;
+            border-right: 1px solid #e2e8f0;
+            height: calc(100vh - 64px);
+            padding: 20px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+
+        /* Sidebar Card */
+        .sidebar-card {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-card:hover {
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+        }
+
+        .sidebar-card-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-card-header:hover {
+            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+        }
+
+        .sidebar-card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--primary);
+            flex: 1;
+            margin: 0;
+        }
+
+        .sidebar-card-toggle {
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+            color: var(--gray-600);
+        }
+
+        .sidebar-card.collapsed .sidebar-card-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .sidebar-card-content {
+            padding: 18px;
+        }
+
+        .sidebar-card.collapsed .sidebar-card-content {
+            display: none;
+        }
+
+        .required-badge {
+            background: var(--danger);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+        }
+
+        .form-group label .required::after {
+            content: '*';
+            color: var(--danger);
+            margin-left: 4px;
+        }
+
+        .info-tooltip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: var(--info);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: help;
+        }
+
+        .form-input,
+        .form-select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-with-unit {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .input-with-unit input {
+            flex: 1;
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+
+        .input-unit {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--gray-100);
+            border: 1.5px solid var(--gray-300);
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            overflow-y: auto;
+            height: calc(100vh - 64px);
+            background: #f4f7fb;
+            padding: 0;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+
+        /* Map Container */
+        .map-wrapper {
+            position: relative;
+            height: 500px;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            flex: 1;
+        }
+
+        .map-tools-bar {
+            padding: 12px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .map-tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .map-tool-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Below Map Grid */
+        .below-map {
+            padding: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 95, 122, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(26, 95, 122, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-800);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .btn-vdot-fetch {
+            background: #f0f9ff;
+            color: #1a5f7a;
+            border: 1px solid #bae6fd;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-vdot-fetch:hover {
+            background: #e0f2fe;
+            border-color: #1a5f7a;
+        }
+
+        /* Checklists */
+        .checklist-section {
+            background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .checklist-section h4 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .checklist-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .checklist-item.checked {
+            background: linear-gradient(135deg, rgba(26, 95, 122, 0.1), rgba(87, 131, 123, 0.1));
+            border-color: var(--primary);
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: var(--primary);
+        }
+
+        /* Results */
+        .result-box {
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .result-high {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .result-moderate {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #1f2937;
+        }
+
+        .result-low {
+            background: linear-gradient(135deg, #34d399, #22c55e);
+            color: white;
+        }
+
+        .result-box h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        /* Risk Matrix */
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: auto repeat(3, 1fr);
+            gap: 4px;
+            margin: 20px auto;
+            max-width: 700px;
+        }
+
+        .risk-matrix-cell {
+            padding: 8px 4px;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .risk-matrix-header {
+            background: var(--primary);
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .risk-matrix-label {
+            background: var(--secondary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .risk-20 {
+            background: #ef4444;
+            color: white;
+        }
+
+        .risk-25 {
+            background: #f97316;
+            color: white;
+        }
+
+        .risk-30 {
+            background: #f59e0b;
+            color: #1f2937;
+        }
+
+        .risk-35 {
+            background: #22c55e;
+            color: white;
+        }
+
+        .risk-matrix-cell.selected {
+            border: 3px solid #1f2937;
+            z-index: 10;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Speed Limit Display */
+        .speed-limit-display {
+            background: linear-gradient(135deg, var(--primary), #0d3d4d);
+            color: white;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(26, 95, 122, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .speed-limit-display .speed-value {
+            font-size: 4rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .speed-limit-display .speed-unit {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .speed-limit-display.selected {
+            box-shadow: 0 0 20px rgba(26, 95, 122, 0.6);
+            border: 2px solid #fff;
+        }
+
+        /* Layer Sidebar */
+        .layer-sidebar {
+            position: fixed;
+            top: 100px;
+            left: 420px;
+            /* Adjusted for sidebar layout */
+            width: 320px;
+            max-height: 72vh;
+            overflow-y: auto;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.12);
+            padding: 12px 14px;
+            z-index: 1400;
+            transform: translateX(-16px) scale(0.99);
+            opacity: 0;
+            transition: all 0.18s ease;
+            display: none;
+        }
+
+        .layer-sidebar.open {
+            display: block;
+            transform: translateX(0) scale(1);
+            opacity: 1;
+        }
+
+        .layer-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .layer-sidebar h4 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.35);
+            z-index: 1300;
+            display: none;
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray-600);
+            transition: all 0.2s ease;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* VDOT Badge */
+        .vdot-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1a5f7a;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        /* Loading Overlay */
+        .map-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a5f7a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                height: auto;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .main-content {
+                height: auto;
+            }
+
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="app-header">
+            <div>
+                <h1>
+                    🚦 Speed Study Analysis Tool
+                </h1>
+                <div class="app-header-subtitle">NACTO City Limits Framework • MUTCD 11th Edition</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <span class="vdot-badge" style="font-size:0.8rem; padding:4px 8px;">Safe System Approach</span>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Study Information Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <span class="sidebar-card-title">📋 Study Information</span>
+                    <span class="sidebar-card-toggle">▼</span>
+                </div>
+                <div class="sidebar-card-content">
+                    <div class="form-group">
+                        <label>
+                            Roadway Name <span class="required"></span>
+                            <button type="button" onclick="fetchVDOTDataManual()" class="btn-vdot-fetch">
+                                Fetch VDOT
+                            </button>
+                        </label>
+                        <input type="text" class="form-input" id="roadwayName" placeholder="Main Street">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>From</label>
+                            <input type="text" class="form-input" id="fromLocation" placeholder="Start">
+                        </div>
+                        <div class="form-group">
+                            <label>To</label>
+                            <input type="text" class="form-input" id="toLocation" placeholder="End">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Jurisdiction</label>
+                            <input type="text" class="form-input" id="jurisdiction" placeholder="County/City">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" class="form-input" id="studyDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Functional Classification</label>
+                        <select class="form-select" id="roadwayClass">
+                            <option value="">Select Classification</option>
+                            <option value="local">Local Street</option>
+                            <option value="collector-minor">Minor Collector</option>
+                            <option value="collector-major">Major Collector</option>
+                            <option value="arterial-minor">Minor Arterial</option>
+                            <option value="arterial-major">Major Arterial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Length (mi)</label>
+                            <input type="number" class="form-input" id="corridorLength" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Posted Speed</label>
+                            <div class="input-with-unit">
+                                <input type="number" class="form-input" id="currentSpeedLimit">
+                                <span class="input-unit">mph</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed Data Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <span class="sidebar-card-title">📊 Speed Data Entry</span>
+                    <span class="required-badge">Required</span>
+                    <span class="sidebar-card-toggle">▼</span>
+                </div>
+                <div class="sidebar-card-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Mean Speed</label>
+                            <input type="number" class="form-input" id="meanSpeed" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>85th Percentile</label>
+                            <input type="number" class="form-input" id="p85Speed" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Median</label>
+                            <input type="number" class="form-input" id="medianSpeed" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>10mph Pace</label>
+                            <input type="text" class="form-input" id="paceSpeed" placeholder="30-40">
+                        </div>
+                    </div>
+
+                    <!-- Calculator -->
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px dashed var(--gray-200);">
+                        <label style="font-size:0.8rem; font-weight:600; margin-bottom:6px; display:block;">Quick
+                            Calculator (Paste Speeds)</label>
+                        <textarea id="speeds" class="form-input" style="height:60px; font-size:0.8rem;"
+                            placeholder="30 32 35 33..."></textarea>
+                        <div style="display:flex; gap:8px; margin-top:8px;">
+                            <button class="btn btn-secondary" style="padding:6px 10px; font-size:0.75rem;"
+                                id="btn-calc">Calculate</button>
+                            <button class="btn btn-primary" style="padding:6px 10px; font-size:0.75rem;"
+                                id="btn-use">Use</button>
+                        </div>
+                        <div id="calc-results"
+                            style="font-size:0.75rem; margin-top:8px; color:var(--gray-600); display:none;">
+                            Count: <span id="k-count">0</span> | 85th: <span id="k-p85">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Data Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <span class="sidebar-card-title">🚗 Additional Data</span>
+                    <span class="sidebar-card-toggle">▼</span>
+                </div>
+                <div class="sidebar-card-content">
+                    <div class="form-group">
+                        <label>ADT (Vehicles/Day)</label>
+                        <input type="number" class="form-input" id="avgDailyTraffic">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Pedestrians</label>
+                            <input type="number" class="form-input" id="pedestrianVolume">
+                        </div>
+                        <div class="form-group">
+                            <label>Bicycles</label>
+                            <input type="number" class="form-input" id="bicycleVolume">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Crashes</label>
+                            <input type="number" class="form-input" id="crashCount">
+                        </div>
+                        <div class="form-group">
+                            <label>Signals</label>
+                            <input type="number" class="form-input" id="signalCount">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map Section -->
+            <div class="map-wrapper">
+                <div class="map-tools-bar">
+                    <span style="font-weight:600; font-size:0.85rem; color:var(--gray-600);">Tools:</span>
+                    <button id="toggleLayersBtn" class="map-tool-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                        Layers
+                    </button>
+                    <button onclick="activatePolygonDraw()" id="polygonBtn" class="map-tool-btn">Polygon</button>
+                    <button onclick="activateCircleDraw()" id="circleBtn" class="map-tool-btn">Circle</button>
+                    <button onclick="activateRectangleDraw()" id="rectangleBtn" class="map-tool-btn">Rectangle</button>
+                    <button onclick="clearAllSelections()" class="map-tool-btn"
+                        style="color:var(--danger);">Clear</button>
+
+                    <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+                        <select id="countySelector" onchange="zoomToCounty(this.value)" class="form-select"
+                            style="width:auto; padding:6px;">
+                            <option value="">Whole Virginia</option>
+                        </select>
+                        <select id="baseMapSelector" onchange="changeBaseMap(this.value)" class="form-select"
+                            style="width:auto; padding:6px;">
+                            <option value="osm">OpenStreetMap</option>
+                            <option value="esri">Esri Basemap</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="map"></div>
+                <div id="mapLoadingOverlay" class="map-loading-overlay">
+                    <div class="spinner"></div>
+                    <p style="margin-top:10px; font-weight:600; color:var(--primary);">Fetching VDOT Data...</p>
+                </div>
+                <div id="selectionInfo"
+                    style="position:absolute; bottom:20px; right:20px; background:var(--primary); color:white; padding:8px 12px; border-radius:6px; font-size:0.85rem; display:none; z-index:1000;">
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="below-map">
+                <div class="grid-2col">
+                    <!-- Conflict Density -->
+                    <div class="card">
+                        <h3 class="card-title">🚸 NACTO Conflict Density</h3>
+                        <div class="checklist-section">
+                            <h4>Pedestrian & Bicycle Facilities</h4>
+                            <div class="checklist-item" onclick="toggleCheckbox('noSidewalks')">
+                                <input type="checkbox" id="noSidewalks"><label>No sidewalks</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('sidewalksOneSide')">
+                                <input type="checkbox" id="sidewalksOneSide"><label>Sidewalk one side</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('noBikeFacilities')">
+                                <input type="checkbox" id="noBikeFacilities"><label>No bike facilities</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('protectedBikeLane')">
+                                <input type="checkbox" id="protectedBikeLane"><label>Protected bike lane</label>
+                            </div>
+                        </div>
+                        <div class="checklist-section">
+                            <h4>Crossing Density</h4>
+                            <div class="checklist-item" onclick="toggleCheckbox('highCrossingDensity')">
+                                <input type="checkbox" id="highCrossingDensity"><label>High (≥3 per ¼ mile)</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('moderateCrossingDensity')">
+                                <input type="checkbox" id="moderateCrossingDensity"><label>Moderate (1-3 per ¼
+                                    mile)</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('lowCrossingDensity')">
+                                <input type="checkbox" id="lowCrossingDensity"><label>Low</label>
+                            </div>
+                        </div>
+                        <div id="conflictDensityResult" class="result-box result-moderate">
+                            <h3>MODERATE</h3>
+                            <p>Conflict Density</p>
+                        </div>
+                    </div>
+
+                    <!-- Activity Level -->
+                    <div class="card">
+                        <h3 class="card-title">🏢 NACTO Activity Level</h3>
+                        <div class="checklist-section">
+                            <h4>High Activity Context</h4>
+                            <div class="checklist-item" onclick="toggleCheckbox('downtown')">
+                                <input type="checkbox" id="downtown"><label>Downtown / CBD</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('retailCorridor')">
+                                <input type="checkbox" id="retailCorridor"><label>Retail Corridor</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('schoolZone')">
+                                <input type="checkbox" id="schoolZone"><label>School Zone</label>
+                            </div>
+                        </div>
+                        <div class="checklist-section">
+                            <h4>Moderate/Low Context</h4>
+                            <div class="checklist-item" onclick="toggleCheckbox('mixedUse')">
+                                <input type="checkbox" id="mixedUse"><label>Mixed Use</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('moderateResidential')">
+                                <input type="checkbox" id="moderateResidential"><label>Moderate Residential</label>
+                            </div>
+                            <div class="checklist-item" onclick="toggleCheckbox('lowDensityResidential')">
+                                <input type="checkbox" id="lowDensityResidential"><label>Low Density Residential</label>
+                            </div>
+                        </div>
+                        <div id="activityLevelResult" class="result-box result-moderate">
+                            <h3>MODERATE</h3>
+                            <p>Activity Level</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results & Reports -->
+                <div class="card" style="margin-top:24px;">
+                    <h3 class="card-title">📈 Analysis Results & Recommendation</h3>
+
+                    <div class="risk-matrix">
+                        <div class="risk-matrix-cell"></div>
+                        <div class="risk-matrix-cell risk-matrix-header">HIGH CONFLICT</div>
+                        <div class="risk-matrix-cell risk-matrix-header">MODERATE CONFLICT</div>
+                        <div class="risk-matrix-cell risk-matrix-header">LOW CONFLICT</div>
+
+                        <div class="risk-matrix-cell risk-matrix-label">HIGH ACTIVITY</div>
+                        <div class="risk-matrix-cell risk-20" id="cell-high-high">20 MPH</div>
+                        <div class="risk-matrix-cell risk-20" id="cell-high-moderate">20 MPH</div>
+                        <div class="risk-matrix-cell risk-25" id="cell-high-low">25 MPH</div>
+
+                        <div class="risk-matrix-cell risk-matrix-label">MODERATE ACTIVITY</div>
+                        <div class="risk-matrix-cell risk-20" id="cell-moderate-high">20 MPH</div>
+                        <div class="risk-matrix-cell risk-25" id="cell-moderate-moderate">25 MPH</div>
+                        <div class="risk-matrix-cell risk-30" id="cell-moderate-low">30 MPH</div>
+
+                        <div class="risk-matrix-cell risk-matrix-label">LOW ACTIVITY</div>
+                        <div class="risk-matrix-cell risk-25" id="cell-low-high">25 MPH</div>
+                        <div class="risk-matrix-cell risk-25" id="cell-low-moderate">25 MPH</div>
+                        <div class="risk-matrix-cell risk-35" id="cell-low-low">35 MPH</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="speed-limit-display" id="nactoSpeedDisplay">
+                            <div class="speed-label">NACTO RECOMMENDED</div>
+                            <div class="speed-value" id="recommendedSpeed">--</div>
+                            <div class="speed-unit">MPH</div>
+                        </div>
+                        <div class="speed-limit-display" style="background: linear-gradient(135deg, #57837b, #3d5c56);">
+                            <div class="speed-label">85TH PERCENTILE</div>
+                            <div class="speed-value" id="p85RecommendedSpeed">--</div>
+                            <div class="speed-unit">MPH</div>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('preview')">Memo Preview</button>
+                        <button class="tab" onclick="switchTab('calculations')">Calculations</button>
+                    </div>
+
+                    <div id="preview-tab" class="tab-content active">
+                        <div
+                            style="background:#fff; border:1px solid #e2e8f0; padding:30px; border-radius:8px; font-family:'Times New Roman', serif;">
+                            <h2 style="text-align:center; font-size:1.2rem; margin-bottom:20px;">INTER-OFFICE MEMORANDUM
+                            </h2>
+                            <div id="previewBody">Complete analysis to generate memo.</div>
+                        </div>
+                    </div>
+
+                    <div id="calculations-tab" class="tab-content">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:var(--gray-100); text-align:left;">
+                                    <th style="padding:10px;">Parameter</th>
+                                    <th style="padding:10px;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calculationsTable">
+                                <tr>
+                                    <td colspan="2" style="padding:10px;">Run analysis...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="calculateRecommendation()">Update Analysis</button>
+                        <button class="btn btn-success" onclick="printFullReport()">Print Report</button>
+                        <button class="btn btn-secondary" onclick="generateWordDoc()">Download Word</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside id="layerSidebar" class="layer-sidebar" aria-hidden="true">
+        <div class="layer-sidebar-header">
+            <h4>Map Layers</h4>
+            <button id="closeLayerSidebar" class="map-tool-btn" style="padding: 4px 8px; font-size: 0.8rem;">Close
+                ✕</button>
+        </div>
+        <div class="layer-list">
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="speedLayerToggle" checked
+                    style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: linear-gradient(135deg, #22c55e, #ef4444); border-radius: 50%;"></span>Speed
+                    Limits</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="stopYieldLayerToggle" checked
+                    style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: linear-gradient(135deg, #dc2626, #eab308); border-radius: 50%;"></span>Stop
+                    & Yield</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="vdotTrafficToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #3b82f6; border-radius: 50%;"></span>VDOT
+                    Traffic</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="vdotCrashToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></span>VDOT
+                    Crashes</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="vdotSidewalkToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #fbbf24; border-radius: 50%;"></span>Sidewalks</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="vdotSpeedToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>VDOT
+                    Speeds</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="vdotBikePedToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 50%;"></span>Bike/Ped</span>
+            </label>
+            <label
+                style="display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;">
+                <input type="checkbox" id="tigerwebToggle" style="width: 16px; height: 16px; cursor: pointer;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span
+                        style="width: 12px; height: 12px; background: #64748b; border-radius: 50%;"></span>Census
+                    Bounds</span>
+            </label>
+        </div>
+    </aside>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet-vector@4.2.3/dist/esri-leaflet-vector.js"></script>
+
+    <script>
+        // --- Global State ---
+        let analysisState = {
+            conflictDensity: 'moderate',
+            activityLevel: 'moderate',
+            recommendedSpeed: null,
+            p85RecommendedSpeed: null
+        };
+
+        const JURISDICTIONS = {
+            "accomack": { name: "Accomack County", bbox: [-76.0533, 37.2918, -75.2429, 38.0274] },
+            "albemarle": { name: "Albemarle County", bbox: [-78.8399, 37.7273, -78.2637, 38.3034] },
+            "arlington": { name: "Arlington County", bbox: [-77.1722, 38.8275, -77.032, 38.9341] },
+            "fairfax_county": { name: "Fairfax County", bbox: [-77.5351, 38.5943, -77.0492, 39.0003] },
+            "henrico": { name: "Henrico County", bbox: [-77.5945, 37.3873, -77.1837, 37.7134] },
+            "loudoun": { name: "Loudoun County", bbox: [-77.8445, 38.9273, -77.4337, 39.2534] },
+            "richmond_city": { name: "Richmond City", bbox: [-77.5775, 37.4464, -77.3853, 37.6011] },
+            "virginia_beach": { name: "Virginia Beach City", bbox: [-76.2269, 36.5516, -75.8589, 36.933] }
+            // Add more as needed or copy full list
+        };
+
+        const riskMatrix = {
+            'high-high': 20, 'high-moderate': 20, 'high-low': 25,
+            'moderate-high': 20, 'moderate-moderate': 25, 'moderate-low': 30,
+            'low-high': 25, 'low-moderate': 25, 'low-low': 35
+        };
+
+        // --- Map Variables ---
+        let map, drawnItems, currentDrawHandler;
+        let speedCluster, stopYieldCluster;
+        let baseLayers = {}, currentBaseLayer;
+        let speedData = [], stopYieldData = [];
+
+        const VDOT_SERVICES = {
+            SPEED_LIMITS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Posted_Speed_Limits/FeatureServer/0',
+            TRAFFIC_VOLUME: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Traffic_Volume_2024/FeatureServer/0',
+            CRASHES: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer/0',
+            SIDEWALKS: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOT_Sidewalk_Inventory/FeatureServer/0',
+            BIKE_PED: 'https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/VDOTBikeandPedestrian24HrCounts20112017/FeatureServer/0'
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', function () {
+            initMap();
+            document.getElementById('studyDate').valueAsDate = new Date();
+
+            // Sidebar toggles
+            document.querySelectorAll('.sidebar-card-header').forEach(header => {
+                header.addEventListener('click', function () {
+                    this.closest('.sidebar-card').classList.toggle('collapsed');
+                });
+            });
+
+            // Checkbox listeners
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    updateCheckboxStyles();
+                    updateAnalysis();
+                });
+            });
+
+            // Populate County Selector (Full list would be better, using subset for now)
+            const selector = document.getElementById('countySelector');
+            Object.keys(JURISDICTIONS).sort().forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = JURISDICTIONS[key].name;
+                selector.appendChild(opt);
+            });
+
+            updateAnalysis();
+        });
+
+        function initMap() {
+            map = L.map('map').setView([37.5407, -77.4360], 12);
+
+            baseLayers = {
+                osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }),
+                esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' })
+            };
+            currentBaseLayer = baseLayers.osm;
+            currentBaseLayer.addTo(map);
+
+            // Clusters
+            speedCluster = L.markerClusterGroup();
+            stopYieldCluster = L.markerClusterGroup();
+            map.addLayer(speedCluster);
+            map.addLayer(stopYieldCluster);
+
+            // Drawn Items
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+            map.on(L.Draw.Event.CREATED, function (e) {
+                drawnItems.addLayer(e.layer);
+                deactivateTools();
+                updateSelectionCount();
+            });
+
+            // Load Data
+            loadMapData();
+
+            // Click Handler
+            map.on('click', function (e) {
+                if (currentDrawHandler) return;
+                fetchVDOTData(e.latlng);
+            });
+
+            // Initialize VDOT Layers
+            if (typeof L.esri !== 'undefined') {
+                window.vdotTrafficLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.TRAFFIC_VOLUME,
+                    style: function () { return { color: '#3b82f6', weight: 3 }; }
+                });
+
+                window.vdotCrashLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.CRASHES,
+                    pointToLayer: function (geojson, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 5,
+                            fillColor: '#ef4444',
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    }
+                });
+
+                window.vdotSidewalkLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.SIDEWALKS,
+                    style: function () { return { color: '#fbbf24', weight: 2 }; }
+                });
+
+                window.vdotSpeedLimitLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.SPEED_LIMITS,
+                    style: function () { return { color: '#10b981', weight: 3 }; }
+                });
+
+                window.vdotBikePedLayer = L.esri.featureLayer({
+                    url: VDOT_SERVICES.BIKE_PED,
+                    pointToLayer: function (geojson, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 6,
+                            fillColor: '#8b5cf6',
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    }
+                });
+            }
+
+            // Tigerweb Configuration
+            const TIGERWEB_CONFIG = {
+                enabled: true,
+                baseUrl: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Census2020/MapServer",
+                layers: {
+                    counties: 82,
+                    tracts: 14
+                }
+            };
+
+            // Initialize Tigerweb Layer
+            if (typeof L.esri !== 'undefined') {
+                window.tigerwebLayer = L.esri.dynamicMapLayer({
+                    url: TIGERWEB_CONFIG.baseUrl,
+                    layers: [TIGERWEB_CONFIG.layers.counties, TIGERWEB_CONFIG.layers.tracts],
+                    opacity: 0.7
+                });
+            }
+        }
+
+        function loadMapData() {
+            Papa.parse('data/Speed limit.csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function (results) {
+                    speedData = results.data.filter(r => r.lat && r.lon);
+                    speedData.forEach(row => {
+                        const marker = L.marker([row.lat, row.lon]);
+                        marker.bindPopup(`<b>Speed Limit: ${row.speed}</b>`);
+                        speedCluster.addLayer(marker);
+                    });
+                }
+            });
+            Papa.parse('data/Stop and Yield.csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function (results) {
+                    stopYieldData = results.data.filter(r => r.lat && r.lon);
+                    stopYieldData.forEach(row => {
+                        const marker = L.marker([row.lat, row.lon]);
+                        marker.bindPopup(`<b>${row.name}</b>`);
+                        stopYieldCluster.addLayer(marker);
+                    });
+                }
+            });
+        }
+
+        // --- Map Tools ---
+        function changeBaseMap(type) {
+            map.removeLayer(currentBaseLayer);
+            currentBaseLayer = baseLayers[type];
+            currentBaseLayer.addTo(map);
+        }
+
+        function zoomToCounty(key) {
+            if (!key) return;
+            const county = JURISDICTIONS[key];
+            if (county) {
+                map.fitBounds([[county.bbox[1], county.bbox[0]], [county.bbox[3], county.bbox[2]]]);
+            }
+        }
+
+        function deactivateTools() {
+            if (currentDrawHandler) {
+                currentDrawHandler.disable();
+                currentDrawHandler = null;
+            }
+            document.querySelectorAll('.map-tool-btn').forEach(btn => btn.style.background = 'white');
+        }
+
+        function activatePolygonDraw() {
+            deactivateTools();
+            document.getElementById('polygonBtn').style.background = '#e0f2fe';
+            currentDrawHandler = new L.Draw.Polygon(map);
+            currentDrawHandler.enable();
+        }
+
+        function activateCircleDraw() {
+            deactivateTools();
+            document.getElementById('circleBtn').style.background = '#e0f2fe';
+            currentDrawHandler = new L.Draw.Circle(map);
+            currentDrawHandler.enable();
+        }
+
+        function activateRectangleDraw() {
+            deactivateTools();
+            document.getElementById('rectangleBtn').style.background = '#e0f2fe';
+            currentDrawHandler = new L.Draw.Rectangle(map);
+            currentDrawHandler.enable();
+        }
+
+        function clearAllSelections() {
+            drawnItems.clearLayers();
+            deactivateTools();
+            document.getElementById('selectionInfo').style.display = 'none';
+        }
+
+        function updateSelectionCount() {
+            // Simplified counting logic
+            const count = drawnItems.getLayers().length;
+            const info = document.getElementById('selectionInfo');
+            info.style.display = count ? 'block' : 'none';
+            info.textContent = `Selection Active`;
+        }
+
+        // --- VDOT Data Fetching ---
+        function fetchVDOTDataManual() {
+            fetchVDOTData(map.getCenter());
+        }
+
+        async function fetchVDOTData(latlng) {
+            const overlay = document.getElementById('mapLoadingOverlay');
+            overlay.style.display = 'flex';
+
+            try {
+                // Speed Limits
+                L.esri.query({ url: VDOT_SERVICES.SPEED_LIMITS }).nearby(latlng, 150).run((err, fc) => {
+                    if (fc && fc.features.length) {
+                        const props = fc.features[0].properties;
+                        updateField('roadwayName', props.ROUTE_COMMON_NAME, 'VDOT');
+                        updateField('currentSpeedLimit', props.CAR_SPEED_LIMIT, 'VDOT');
+                        updateField('jurisdiction', props.FROM_JURISDICTION, 'VDOT');
+                    }
+                });
+
+                // Traffic Volume
+                L.esri.query({ url: VDOT_SERVICES.TRAFFIC_VOLUME }).nearby(latlng, 150).run((err, fc) => {
+                    if (fc && fc.features.length) {
+                        const props = fc.features[0].properties;
+                        updateField('avgDailyTraffic', props.ADT, 'VDOT');
+                    }
+                });
+
+            } catch (e) { console.error(e); }
+
+            setTimeout(() => overlay.style.display = 'none', 1000);
+        }
+
+        function updateField(id, value, source) {
+            const el = document.getElementById(id);
+            if (el && value) {
+                el.value = value;
+                // Visual feedback could be added here
+            }
+        }
+
+        // --- Analysis Logic ---
+        function toggleCheckbox(id) {
+            const cb = document.getElementById(id);
+            cb.checked = !cb.checked;
+            updateCheckboxStyles();
+            updateAnalysis();
+        }
+
+        function updateCheckboxStyles() {
+            document.querySelectorAll('.checklist-item').forEach(item => {
+                const cb = item.querySelector('input');
+                if (cb.checked) item.classList.add('checked');
+                else item.classList.remove('checked');
+            });
+        }
+
+        function updateAnalysis() {
+            // Conflict Density
+            let cHigh = 0, cMod = 0, cLow = 0;
+            if (document.getElementById('noSidewalks').checked) cHigh += 2;
+            if (document.getElementById('sidewalksOneSide').checked) cHigh += 1;
+            if (document.getElementById('noBikeFacilities').checked) cHigh += 2;
+            if (document.getElementById('protectedBikeLane').checked) cLow += 2;
+            if (document.getElementById('highCrossingDensity').checked) cHigh += 2;
+            if (document.getElementById('moderateCrossingDensity').checked) cMod += 1;
+            if (document.getElementById('lowCrossingDensity').checked) cLow += 2;
+
+            if (cHigh >= cMod && cHigh >= cLow) analysisState.conflictDensity = 'high';
+            else if (cLow > cHigh && cLow > cMod) analysisState.conflictDensity = 'low';
+            else analysisState.conflictDensity = 'moderate';
+
+            // Activity Level
+            let aHigh = 0, aMod = 0, aLow = 0;
+            if (document.getElementById('downtown').checked) aHigh += 3;
+            if (document.getElementById('retailCorridor').checked) aHigh += 2;
+            if (document.getElementById('schoolZone').checked) aHigh += 3;
+            if (document.getElementById('mixedUse').checked) aMod += 2;
+            if (document.getElementById('moderateResidential').checked) aMod += 2;
+            if (document.getElementById('lowDensityResidential').checked) aLow += 2;
+
+            if (aHigh >= aMod && aHigh >= aLow) analysisState.activityLevel = 'high';
+            else if (aLow > aHigh && aLow > aMod) analysisState.activityLevel = 'low';
+            else analysisState.activityLevel = 'moderate';
+
+            // Update UI
+            const cRes = document.getElementById('conflictDensityResult');
+            cRes.className = 'result-box result-' + analysisState.conflictDensity;
+            cRes.innerHTML = `<h3>${analysisState.conflictDensity.toUpperCase()}</h3><p>Conflict Density</p>`;
+
+            const aRes = document.getElementById('activityLevelResult');
+            aRes.className = 'result-box result-' + analysisState.activityLevel;
+            aRes.innerHTML = `<h3>${analysisState.activityLevel.toUpperCase()}</h3><p>Activity Level</p>`;
+
+            // Matrix Selection
+            document.querySelectorAll('.risk-matrix-cell').forEach(c => c.classList.remove('selected'));
+            const cell = document.getElementById(`cell-${analysisState.activityLevel}-${analysisState.conflictDensity}`);
+            if (cell) cell.classList.add('selected');
+
+            analysisState.recommendedSpeed = riskMatrix[`${analysisState.activityLevel}-${analysisState.conflictDensity}`];
+            document.getElementById('recommendedSpeed').textContent = analysisState.recommendedSpeed || '--';
+
+            if (analysisState.recommendedSpeed) document.getElementById('nactoSpeedDisplay').classList.add('selected');
+            else document.getElementById('nactoSpeedDisplay').classList.remove('selected');
+        }
+
+        function calculateRecommendation() {
+            const p85 = parseFloat(document.getElementById('p85Speed').value);
+            if (!isNaN(p85)) {
+                const rounded = Math.round(p85 / 5) * 5;
+                analysisState.p85RecommendedSpeed = rounded;
+                document.getElementById('p85RecommendedSpeed').textContent = rounded;
+            }
+
+            updateAnalysis();
+            generateMemoPreview();
+        }
+
+        // --- Calculator ---
+        document.getElementById('btn-calc').addEventListener('click', () => {
+            const txt = document.getElementById('speeds').value;
+            const nums = txt.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0).sort((a, b) => a - b);
+            if (nums.length) {
+                const count = nums.length;
+                const p85 = nums[Math.ceil(count * 0.85) - 1];
+                document.getElementById('k-count').textContent = count;
+                document.getElementById('k-p85').textContent = p85;
+                document.getElementById('calc-results').style.display = 'block';
+            }
+        });
+
+        document.getElementById('btn-use').addEventListener('click', () => {
+            const p85 = document.getElementById('k-p85').textContent;
+            if (p85 > 0) document.getElementById('p85Speed').value = p85;
+        });
+
+        // --- Reports ---
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(name + '-tab').classList.add('active');
+        }
+
+        function generateMemoPreview() {
+            const name = document.getElementById('roadwayName').value || '[Roadway]';
+            const html = `
+                <p><strong>TO:</strong> Traffic Engineering Division</p>
+                <p><strong>SUBJECT:</strong> Speed Study for ${name}</p>
+                <p><strong>DATE:</strong> ${new Date().toLocaleDateString()}</p>
+                <hr>
+                <p>A speed study was conducted on ${name}.</p>
+                <ul>
+                    <li><strong>85th Percentile Speed:</strong> ${document.getElementById('p85Speed').value || '--'} mph</li>
+                    <li><strong>Mean Speed:</strong> ${document.getElementById('meanSpeed').value || '--'} mph</li>
+                    <li><strong>ADT:</strong> ${document.getElementById('avgDailyTraffic').value || '--'}</li>
+                </ul>
+                <p><strong>NACTO Analysis:</strong></p>
+                <ul>
+                    <li>Conflict Density: ${analysisState.conflictDensity.toUpperCase()}</li>
+                    <li>Activity Level: ${analysisState.activityLevel.toUpperCase()}</li>
+                    <li><strong>Recommended Speed Limit: ${analysisState.recommendedSpeed || '--'} MPH</strong></li>
+                </ul>
+            `;
+            document.getElementById('previewBody').innerHTML = html;
+
+            // Update Calc Table
+            document.getElementById('calculationsTable').innerHTML = `
+                <tr><td>85th Percentile</td><td>${document.getElementById('p85Speed').value || '--'} mph</td></tr>
+                <tr><td>Mean Speed</td><td>${document.getElementById('meanSpeed').value || '--'} mph</td></tr>
+                <tr><td>NACTO Recommendation</td><td>${analysisState.recommendedSpeed || '--'} mph</td></tr>
+            `;
+        }
+
+        function generateWordDoc() {
+            const content = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><title>Speed Study</title></head>
+                <body>${document.getElementById('previewBody').innerHTML}</body>
+                </html>
+            `;
+            const blob = new Blob([content], { type: 'application/msword' });
+            saveAs(blob, 'Speed_Study_Memo.doc');
+        }
+
+        function printFullReport() {
+            window.print();
+        }
+        // --- Layer & Sidebar Logic ---
+        function safeOn(id, handler) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', handler);
+        }
+
+        // Sidebar Toggles
+        (function () {
+            const toggleBtn = document.getElementById('toggleLayersBtn');
+            const sidebar = document.getElementById('layerSidebar');
+            const closeBtn = document.getElementById('closeLayerSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+
+            function openSidebar() {
+                sidebar.classList.add('open');
+                sidebar.setAttribute('aria-hidden', 'false');
+                if (backdrop) backdrop.classList.add('show');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                sidebar.setAttribute('aria-hidden', 'true');
+                if (backdrop) backdrop.classList.remove('show');
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', () => {
+                if (sidebar.classList.contains('open')) closeSidebar(); else openSidebar();
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+        })();
+
+        // Layer Toggles
+        safeOn('speedLayerToggle', function () {
+            if (this.checked) map.addLayer(speedCluster);
+            else map.removeLayer(speedCluster);
+            updateSelectionCount();
+        });
+
+        safeOn('stopYieldLayerToggle', function () {
+            if (this.checked) map.addLayer(stopYieldCluster);
+            else map.removeLayer(stopYieldCluster);
+            updateSelectionCount();
+        });
+
+        safeOn('vdotTrafficToggle', function () {
+            if (!window.vdotTrafficLayer) return;
+            if (this.checked) window.vdotTrafficLayer.addTo(map);
+            else map.removeLayer(window.vdotTrafficLayer);
+        });
+
+        safeOn('vdotCrashToggle', function () {
+            if (!window.vdotCrashLayer) return;
+            if (this.checked) window.vdotCrashLayer.addTo(map);
+            else map.removeLayer(window.vdotCrashLayer);
+        });
+
+        safeOn('vdotSidewalkToggle', function () {
+            if (!window.vdotSidewalkLayer) return;
+            if (this.checked) window.vdotSidewalkLayer.addTo(map);
+            else map.removeLayer(window.vdotSidewalkLayer);
+        });
+
+        safeOn('vdotSpeedToggle', function () {
+            if (!window.vdotSpeedLimitLayer) return;
+            if (this.checked) window.vdotSpeedLimitLayer.addTo(map);
+            else map.removeLayer(window.vdotSpeedLimitLayer);
+        });
+
+        safeOn('vdotBikePedToggle', function () {
+            if (!window.vdotBikePedLayer) return;
+            if (this.checked) window.vdotBikePedLayer.addTo(map);
+            else map.removeLayer(window.vdotBikePedLayer);
+        });
+
+        safeOn('tigerwebToggle', function () {
+            if (!window.tigerwebLayer) return;
+            if (this.checked) window.tigerwebLayer.addTo(map);
+            else map.removeLayer(window.tigerwebLayer);
+        });
+    </script>
+</body>
+
+</html>
