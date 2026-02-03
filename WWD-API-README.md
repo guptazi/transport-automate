@@ -13,6 +13,34 @@ This API accepts geographic coordinates and returns a comprehensive MUTCD (Manua
 - **Section 2B.41 Requirements**: Includes specific height and placement specifications
 - **OpenRouter Integration**: Leverages Gemini 2.0 Flash for intelligent analysis
 - **Bubble.io Compatible**: Easy integration with no-code platforms
+- **Web Interface**: Interactive HTML interface with map-based location selection
+
+## Quick Start (Web Interface)
+
+The easiest way to use the WWD Audit API is through the included web interface:
+
+1. **Start the API server:**
+```bash
+npm install
+npm start
+```
+
+2. **Open the web interface:**
+
+Open your browser and navigate to: **http://localhost:3000/wwd-audit.html**
+
+3. **Use the interface:**
+   - Click on the map to select a location, OR
+   - Enter coordinates manually, OR
+   - Use the quick test locations for Virginia interchanges
+   - Click "Analyze Intersection" to get the MUTCD safety audit
+
+The web interface (`wwd-audit.html`) provides:
+- Interactive Leaflet map for location selection
+- Pre-loaded Virginia test locations
+- Real-time audit results display
+- Error handling and loading states
+- All served directly from the Node.js server (no separate HTTP server needed)
 
 ## Installation
 

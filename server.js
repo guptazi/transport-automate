@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Serve static files (HTML interface, Virginia boundary, etc.)
+app.use(express.static(__dirname));
+
 // MUTCD Safety Auditor System Prompt
 const MUTCD_SYSTEM_PROMPT = `You are an expert MUTCD (Manual on Uniform Traffic Control Devices) Safety Auditor specializing in Wrong Way Driving (WWD) prevention at highway interchanges and intersections.
 
